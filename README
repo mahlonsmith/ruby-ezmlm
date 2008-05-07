@@ -1,0 +1,45 @@
+= ThingFish
+
+== Authors
+
+* Michael Granger <mgranger@laika.com>
+* Jeremiah Jordan <jjordan@laika.com>
+
+== Installation
+
+=== Requirements
+
+Ruby-Ezmlm is tested using Ruby 1.8.6:
+
+  * Ruby (>= 1.8.6): http://www.ruby-lang.org/en/downloads/
+
+Other versions may work, but are not tested.
+
+=== Ruby Modules
+
+There are two ways you can install Ruby-Ezmlm. The easiest is to use RubyGems:
+
+  $ sudo gem install -y ruby-ezmlm
+
+If you'd rather install from source, you'll need these:
+
+  * Tmail (>= 1.2.3.1): http://tmail.rubyforge.org/
+
+Once these are installed:
+
+  $ tar -zxvf ezmlm-0.0.1.tgz
+  $ cd thingfish-0.0.1
+  $ su -
+  # rake install
+
+If you want to help out with development, run tests, or generate documentation, 
+you'll need a few more things:
+
+  * RSpec (>= 1.0.5): http://rspec.rubyforge.org/
+  * rcov (>= 0.7.0): http://eigenclass.org/hiki.rb?rcov
+
+If you have RubyGems installed, you can install these automatically via the 
++install_dependencies+ task of the Rakefile:
+
+  $ sudo rake install_dependencies
+
