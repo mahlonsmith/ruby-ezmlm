@@ -189,6 +189,38 @@ describe Ezmlm::List do
 			mods.should include( *TEST_MODERATORS )
 		end
 		
+		it "can get a list of modererators when remote subscription moderation is enabled" +
+           " and the modsub configuration is empty" do
+			# Test the moderation config files for existence
+			modsub_path_obj = mock( "Mock 'modsub' path object" )
+			@listpath.should_receive( :+ ).with( 'modsub' ).twice.and_return( modsub_path_obj )
+			modsub_path_obj.should_receive( :exist? ).twice.and_return( false )
+            remote_path_obj = mock( "Mock 'remote' path object" )
+			@listpath.should_receive( :+ ).with( 'remote' ).twice.and_return( remote_path_obj )
+            remote_path_obj.should_receive( :exist? ).twice.and_return( true )
+
+			# Try to read directory names from both config files
+			remote_path_obj.should_receive( :read ).with( 1 ).and_return( '/' )
+			remote_path_obj.should_receive( :read ).with().and_return( TEST_CUSTOM_MODERATORS_DIR )
+
+			custom_mod_path = mock( "Mock path object for customized moderator dir" )
+			Pathname.should_receive( :new ).with( TEST_CUSTOM_MODERATORS_DIR ).and_return( custom_mod_path )
+
+			# Read subscribers from the default file
+			custom_mod_path.should_receive( :+ ).with( '*' ).and_return( :mod_sub_dir )
+			expectation = Pathname.should_receive( :glob ).with( :mod_sub_dir )
+
+			TEST_MODERATORS.each do |email|
+				mock_subfile = mock( "Mock subscribers file for '#{email}'" )
+				mock_subfile.should_receive( :read ).and_return( "T#{email}\0" )
+
+				expectation.and_yield( mock_subfile )
+			end
+
+			mods = @list.subscription_moderators
+			mods.should have(TEST_MODERATORS.length).members
+			mods.should include( *TEST_MODERATORS )
+		end
 
 		### Message moderation
 		
