@@ -9,7 +9,9 @@ BEGIN {
 	$LOAD_PATH.unshift( libdir ) unless $LOAD_PATH.include?( libdir )
 }
 
+
 begin
+	require 'tmail'
 	require 'spec/runner'
 	require 'spec/lib/helpers'
 	require 'ezmlm/list'
@@ -369,9 +371,170 @@ describe Ezmlm::List do
 	### 
 	### Archive functions
 	### 
-	it "can return the count of archived posts"
+	describe "archive functions" do
+	
+		before( :each ) do
+			@listpath = LISTDIR.dup
+			@list = Ezmlm::List.new( @listpath )
+		end
+		
+		
+		it "can return the count of archived posts" do
+			numpath_obj = mock( "num file path object" )
+			@listpath.should_receive( :+ ).with( 'num' ).and_return( numpath_obj )
+			
+			numpath_obj.should_receive( :exist? ).and_return( true )
+			numpath_obj.should_receive( :read ).and_return( "1723:123123123" )
+			
+			@list.message_count.should == 1723
+		end
+	
+		it "can return the count of archived posts to a list that hasn't been posted to" do
+			numpath_obj = mock( "num file path object" )
+			@listpath.should_receive( :+ ).with( 'num' ).and_return( numpath_obj )
+			
+			numpath_obj.should_receive( :exist? ).and_return( false )
+			
+			@list.message_count.should == 0
+		end
+		
 
-	it "can return a hash of the subjects of all archived posts to message ids"
+		
+		TEST_ARCHIVE_DIR = LISTDIR + 'archive'
+		TEST_ARCHIVE_SUBDIRS = %w[ 0 1 2 3 4 5 6 7 8 9 10 11 12 13 ]
+
+		before( :each ) do
+			@archive_dir = TEST_ARCHIVE_DIR.dup
+			@archive_subdirs = TEST_ARCHIVE_SUBDIRS.dup
+			@archive_subdir_paths = TEST_ARCHIVE_SUBDIRS.collect {|pn| TEST_ARCHIVE_DIR + pn }
+			@archive_post_paths = TEST_ARCHIVE_SUBDIRS.collect {|pn|
+				TEST_ARCHIVE_DIR + TEST_ARCHIVE_SUBDIRS.last + pn
+			  }
+		end
+		
+
+		it "can return a TMail::Mail object parsed from the last archived post" do
+			# need to find the last message
+			archive_path_obj = mock( "archive path" )
+
+			@listpath.should_receive( :+ ).with( 'archive' ).and_return( archive_path_obj )
+			archive_path_obj.should_receive( :exist? ).and_return( true )
+
+			# Find the last numbered directory under the archive dir
+			archive_path_obj.should_receive( :+ ).with( '[0-9]*' ).
+				and_return( :archive_dir_globpath )
+			Pathname.should_receive( :glob ).with( :archive_dir_globpath ).
+				and_return( @archive_subdir_paths )
+
+			# Find the last numbered file under the last numbered directory we found
+			# above.
+			@archive_subdir_paths.last.should_receive( :+ ).with( '[0-9]*' ).
+				and_return( :archive_post_pathglob )
+			Pathname.should_receive( :glob ).with( :archive_post_pathglob ).
+				and_return( @archive_post_paths )
+
+			TMail::Mail.should_receive( :load ).with( @archive_post_paths.last.to_s ).
+				and_return( :mail_object )
+
+			@list.last_post.should == :mail_object
+		end
+		
+		
+		it "returns nil for the last post if there is no archive directory for the list" do
+			archive_path_obj = mock( "archive path" )
+
+			@listpath.should_receive( :+ ).with( 'archive' ).and_return( archive_path_obj )
+			archive_path_obj.should_receive( :exist? ).and_return( false )
+			@list.last_post.should == nil
+		end
+		
+		
+		it "returns nil for the last post if there haven't been any posts to the list" do
+			archive_path_obj = mock( "archive path" )
+			mail_object = mock( "Mock TMail object" )
+
+			@listpath.should_receive( :+ ).with( 'archive' ).and_return( archive_path_obj )
+			archive_path_obj.should_receive( :exist? ).and_return( true )
+
+			# Find the last numbered directory under the archive dir
+			archive_path_obj.should_receive( :+ ).with( '[0-9]*' ).
+				and_return( :archive_dir_globpath )
+			Pathname.should_receive( :glob ).with( :archive_dir_globpath ).and_return( [] )
+
+			@list.last_post.should == nil
+		end
+		
+		
+		it "raises a RuntimeError if the last archive directory doesn't have any messages in it" do
+			archive_path_obj = mock( "archive path" )
+			mail_object = mock( "Mock TMail object" )
+
+			@listpath.should_receive( :+ ).with( 'archive' ).and_return( archive_path_obj )
+			archive_path_obj.should_receive( :exist? ).and_return( true )
+
+			# Find the last numbered directory under the archive dir
+			archive_path_obj.should_receive( :+ ).with( '[0-9]*' ).
+				and_return( :archive_dir_globpath )
+			Pathname.should_receive( :glob ).with( :archive_dir_globpath ).
+				and_return( @archive_subdir_paths )
+
+			@archive_subdir_paths.last.should_receive( :+ ).with( '[0-9]*' ).
+				and_return( :archive_post_pathglob )
+			Pathname.should_receive( :glob ).with( :archive_post_pathglob ).
+				and_return( [] )
+
+			lambda {
+				@list.last_post
+			}.should raise_error( RuntimeError, /unexpectedly empty/i )
+		end
+		
+		
+		it "can fetch the date of the last archived post" do
+			mail_object = mock( "Mock TMail object" )
+
+			@list.should_receive( :last_post ).and_return( mail_object )
+			mail_object.should_receive( :date ).and_return( :the_message_date )
+
+			@list.last_message_date.should == :the_message_date
+		end
+
+		
+		it "can fetch the date of the last archived post" do
+			mail_object = mock( "Mock TMail object" )
+
+			@list.should_receive( :last_post ).and_return( mail_object )
+			mail_object.should_receive( :date ).and_return( :the_message_date )
+
+			@list.last_message_date.should == :the_message_date
+		end
+
+		
+		it "can fetch the author of the last archived post" do
+			mail_object = mock( "Mock TMail object" )
+
+			@list.should_receive( :last_post ).and_return( mail_object )
+			mail_object.should_receive( :from ).and_return( :the_message_author )
+
+			@list.last_message_author.should == :the_message_author
+		end
+
+		
+		it "can fetch the subject of the last archived post" do
+			mail_object = mock( "Mock TMail object" )
+
+			@list.should_receive( :last_post ).and_return( mail_object )
+			mail_object.should_receive( :from ).and_return( :the_message_author )
+
+			@list.last_message_author.should == :the_message_author
+		end
+
+	end
+
+
+	it "can fetch the body of an archived post by message id"
+	it "can fetch the header of an archived post by message id"
+	
+	it "can return a hash of the subjects of all archived posts to message ids" 
 	it "can return an Array of the subjects of all archived posts"
 
 	it "can return a hash of the threads of all archived posts to message ids"
@@ -379,14 +542,6 @@ describe Ezmlm::List do
 
 	it "can return a hash of the authors of all archived posts to message ids"
 	it "can return an Array of the authors of all archived posts"
-
-
-	it "can fetch the body of an archived post by message id"
-	it "can fetch the header of an archived post by message id"
-
-	it "can fetch the date of the last archived post"
-	it "can fetch the author of the last archived post"
-	it "can fetch the subject of the last archived post"
 
 end
 

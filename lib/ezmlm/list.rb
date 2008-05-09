@@ -20,6 +20,7 @@
 
 require 'pathname'
 require 'ezmlm'
+require 'tmail'
 
 
 ### A Ruby interface to an ezmlm-idx mailing list directory
@@ -40,6 +41,28 @@ class Ezmlm::List
 	# The Pathname object for the list directory
 	attr_reader :listdir
 
+
+	### Return the number of messages in the list archive
+	def message_count
+		numfile = self.listdir + 'num'
+		return 0 unless numfile.exist?
+		return Integer( numfile.read[/^(\d+):/, 1] )
+	end
+
+
+	### Return the Date parsed from the last post to the list.
+	def last_message_date
+		mail = self.last_post or return nil
+		return mail.date
+	end
+
+
+	### Return the author of the last post to the list.
+	def last_message_author
+		mail = self.last_post or return nil
+		return mail.from
+	end
+	
 
 	### Return the email address of the list's owner.
 	def owner
@@ -107,6 +130,30 @@ class Ezmlm::List
 		end
 		
 		return self.read_subscriber_dir( subdir )
+	end
+	
+	
+	### Return a TMail::Mail object loaded from the last post to the list. Returns
+	### +nil+ if there are no archived posts.
+	def last_post
+		archivedir = self.listdir + 'archive'
+		return nil unless archivedir.exist?
+
+		# Find the last numbered directory under the archive dir
+		last_archdir = Pathname.glob( archivedir + '[0-9]*' ).
+			sort_by {|pn| Integer(pn.basename.to_s) }.last
+
+		return nil unless last_archdir
+
+		# Find the last numbered file under the last numbered directory we found
+		# above.
+		last_post_path = Pathname.glob( last_archdir + '[0-9]*' ).
+			sort_by {|pn| Integer(pn.basename.to_s) }.last
+
+		raise RuntimeError, "unexpectedly empty archive directory '%s'" % [ last_archdir ] \
+			unless last_post_path
+
+		last_post = TMail::Mail.load( last_post_path.to_s )
 	end
 	
 	
