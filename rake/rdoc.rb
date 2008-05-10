@@ -3,6 +3,14 @@
 # $Id$
 # 
 
+BEGIN {
+	require 'pathname'
+	basedir = Pathname.new( __FILE__ ).dirname.parent
+	docsdir = basedir + 'docs'
+	
+	$LOAD_PATH << docsdir.to_s
+}
+
 require 'rake/rdoctask'
 
 ### Task: rdoc

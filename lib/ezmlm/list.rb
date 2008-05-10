@@ -31,6 +31,9 @@ class Ezmlm::List
 	def initialize( listdir )
 		listdir = Pathname.new( listdir ) if !listdir.is_a?( Pathname )
 		@listdir = listdir
+
+		# Cached lookups
+		@config = nil
 	end
 
 
@@ -41,6 +44,25 @@ class Ezmlm::List
 	# The Pathname object for the list directory
 	attr_reader :listdir
 
+
+	### Return the configured name of the list (without the host)
+	def name
+		return self.config[ 'L' ]
+	end
+	
+
+	### Return the configured host of the list
+	def host
+		return self.config[ 'H' ]
+	end
+	
+
+	### Return the configured address of the list (in list@host form)
+	def address
+		return "%s@%s" % [ self.name, self.host ]
+	end
+	alias_method :fullname, :address
+	
 
 	### Return the number of messages in the list archive
 	def message_count
@@ -62,16 +84,28 @@ class Ezmlm::List
 		mail = self.last_post or return nil
 		return mail.from
 	end
+
+
+	### Return the list config as a Hash
+	def config
+		unless @config
+			configfile = self.listdir + 'config'
+			raise "List config file %p does not exist" % [ configfile ] unless configfile.exist?
+			
+			@config = configfile.read.scan( /^(\S):([^\n]*)$/m ).inject({}) do |h,pair|
+				key,val = *pair
+				h[key] = val
+				h
+			end
+		end
+		
+		return @config
+	end
 	
 
 	### Return the email address of the list's owner.
 	def owner
-		config = self.listdir + 'config'
-		if config.read =~ /^5:([^\n]+)$/m
-			return $1
-		else
-			return nil
-		end
+		self.config['5']
 	end
 	
 
@@ -148,7 +182,7 @@ class Ezmlm::List
 		# Find the last numbered file under the last numbered directory we found
 		# above.
 		last_post_path = Pathname.glob( last_archdir + '[0-9]*' ).
-			sort_by {|pn| Integer(pn.basename.to_s) }.last
+			sort_by {|pn| pn.basename.to_s }.last
 
 		raise RuntimeError, "unexpectedly empty archive directory '%s'" % [ last_archdir ] \
 			unless last_post_path

@@ -35,7 +35,7 @@ module Ezmlm
 
 
 	require 'ezmlm/list'
-	
+	require 'ezmlm/listdaemon'
 	
 
 	###############

@@ -132,13 +132,16 @@ end
 
 ### Cruisecontrol task
 desc "Cruisecontrol build"
-task :cruise => [:clean, :coverage, :package] do |task|
+task :cruise => [:clean, :coverage, :rdoc, :package] do |task|
 	raise "Artifacts dir not set." if ARTIFACTS_DIR.to_s.empty?
 	artifact_dir = ARTIFACTS_DIR.cleanpath
 	artifact_dir.mkpath
 	
 	$stderr.puts "Copying coverage stats..."
 	FileUtils.cp_r( 'coverage', artifact_dir )
+	
+	$stderr.puts "Copying documentation..."
+	FileUtils.cp_r( 'docs/api', artifact_dir + 'rdoc' )
 	
 	$stderr.puts "Copying packages..."
 	FileUtils.cp_r( FileList['pkg/*'].to_a, artifact_dir )

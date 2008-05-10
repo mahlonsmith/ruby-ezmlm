@@ -29,25 +29,42 @@ describe Ezmlm::List do
 
 
 	LISTDIR = Pathname.new( 'list' )
-
 	TEST_SUBSCRIBERS = %w[
 		pete.chaffee@toadsmackers.com
 		dolphinzombie@alahalohamorra.com
 		piratebanker@yahoo.com
 	  ]
-
 	TEST_MODERATORS = %w[
 		dolphinzombie@alahalohamorra.com
 	  ]
-
+	TEST_LIST_NAME = 'waffle-lovers'
+	TEST_LIST_HOST = 'lists.syrup.info'
 	TEST_OWNER = 'listowner@rumpus-the-whale.info'
-
 	TEST_CUSTOM_MODERATORS_DIR = '/foo/bar/clowns'
-		
-
-
+	TEST_CONFIG = <<-"EOF".gsub( /^\t+/, '' )
+		F:-aBCDeFGHijKlMnOpQrStUVWXYZ
+		X:
+		D:/var/qmail/alias/lists/waffle-lovers/
+		T:/var/qmail/alias/.qmail-waffle-lovers
+		L:#{TEST_LIST_NAME}
+		H:#{TEST_LIST_HOST}
+		C:
+		0:
+		3:
+		4:
+		5:#{TEST_OWNER}
+		6:
+		7:
+		8:
+		9:
+	EOF
+	
 
 	it "can create a new list"
+	it "can add a new subscriber"
+	it "can remove a current subscriber"
+	it "can edit the list's text files"
+
 
 	### 
 	### List manager functions
@@ -59,6 +76,49 @@ describe Ezmlm::List do
 			@list = Ezmlm::List.new( @listpath )
 		end
 		
+		
+		it "can return the configured list name" do
+			@list.stub!( :config ).and_return({ 'L' => :the_list_name })
+			@list.name.should == :the_list_name
+		end
+		
+		
+		it "can return the configured list host" do
+			@list.stub!( :config ).and_return({ 'H' => :the_list_host })
+			@list.host.should == :the_list_host
+		end
+		
+		
+		it "can return the configured list address" do
+			@list.stub!( :config ).and_return({ 'L' => TEST_LIST_NAME, 'H' => TEST_LIST_HOST })
+			@list.address.should == "%s@%s" % [ TEST_LIST_NAME, TEST_LIST_HOST ]
+		end
+		
+		
+		CONFIG_KEYS = %w[ F X D T L H C 0 3 4 5 6 7 8 9 ]
+
+		it "can fetch the list config as a Hash" do
+			config_path = mock( "Mock config path" )
+			@listpath.should_receive( :+ ).with( 'config' ).and_return( config_path )
+			config_path.should_receive( :exist? ).and_return( true )
+			config_path.should_receive( :read ).and_return( TEST_CONFIG )
+			
+			@list.config.should be_an_instance_of( Hash )
+			@list.config.should have( CONFIG_KEYS.length ).members
+			@list.config.keys.should include( *CONFIG_KEYS )
+		end
+
+		
+		it "raises an error if the list config file doesn't exist" do
+			config_path = mock( "Mock config path" )
+			@listpath.should_receive( :+ ).with( 'config' ).and_return( config_path )
+			config_path.should_receive( :exist? ).and_return( false )
+
+			lambda {
+				@list.config
+			}.should raise_error( RuntimeError, /does not exist/ )
+		end
+
 		
 		it "can return a list of subscribers' email addresses" do
 			subscribers_dir = LISTDIR + 'subscribers'
@@ -313,60 +373,19 @@ describe Ezmlm::List do
 
 		### List owner
 		
-		TEST_CONFIG_WITHOUT_OWNER = <<-"EOF".gsub( /^\t+/, '' )
-		F:-aBCDeFGHijKlMnOpQrStUVWXYZ
-		X:
-		D:/var/qmail/alias/lists/waffle-lovers/
-		T:/var/qmail/alias/.qmail-waffle-lovers
-		L:waffle-lovers
-		H:lists.syrup.info
-		C:
-		0:
-		3:
-		4:
-		5:
-		6:
-		7:
-		8:
-		9:
-		EOF
-		
 		it "returns nil when the list doesn't have an owner in its config" do
-			config_path_obj = mock( "Config path object" )
-			@listpath.should_receive( :+ ).with( 'config' ).and_return( config_path_obj )
-			config_path_obj.should_receive( :read ).and_return( TEST_CONFIG_WITHOUT_OWNER )
-
+			@list.stub!( :config ).and_return({ '5' => nil })
 			@list.owner.should == nil
 		end
 		
 			
-		TEST_CONFIG_WITH_OWNER = <<-"EOF".gsub( /^\t+/, '' )
-		F:-aBCDeFGHijKlMnOpQrStUVWXYZ
-		X:
-		D:/var/qmail/alias/lists/waffle-lovers/
-		T:/var/qmail/alias/.qmail-waffle-lovers
-		L:waffle-lovers
-		H:lists.syrup.info
-		C:
-		0:
-		3:
-		4:
-		5:#{TEST_OWNER}
-		6:
-		7:
-		8:
-		9:
-		EOF
-		
 		it "can return the email address of the list owner" do
-			config_path_obj = mock( "Config path object" )
-			@listpath.should_receive( :+ ).with( 'config' ).and_return( config_path_obj )
-			config_path_obj.should_receive( :read ).and_return( TEST_CONFIG_WITH_OWNER )
-
+			@list.stub!( :config ).and_return({ '5' => TEST_OWNER })
 			@list.owner.should == TEST_OWNER
 		end
 
 	end
+	
 	
 	### 
 	### Archive functions
@@ -402,12 +421,13 @@ describe Ezmlm::List do
 		
 		TEST_ARCHIVE_DIR = LISTDIR + 'archive'
 		TEST_ARCHIVE_SUBDIRS = %w[ 0 1 2 3 4 5 6 7 8 9 10 11 12 13 ]
+		TEST_POST_FILES = %w[ 00 01 02 03 04 05 06 07 08 09 10 11 12 13 ]
 
 		before( :each ) do
 			@archive_dir = TEST_ARCHIVE_DIR.dup
 			@archive_subdirs = TEST_ARCHIVE_SUBDIRS.dup
 			@archive_subdir_paths = TEST_ARCHIVE_SUBDIRS.collect {|pn| TEST_ARCHIVE_DIR + pn }
-			@archive_post_paths = TEST_ARCHIVE_SUBDIRS.collect {|pn|
+			@archive_post_paths = TEST_POST_FILES.collect {|pn|
 				TEST_ARCHIVE_DIR + TEST_ARCHIVE_SUBDIRS.last + pn
 			  }
 		end
