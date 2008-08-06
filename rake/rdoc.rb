@@ -14,6 +14,7 @@ BEGIN {
 require 'rake/rdoctask'
 
 gem 'darkfish-rdoc', '>= 1.1.0'
+require 'darkfish-rdoc'
 
 ### Task: rdoc
 Rake::RDocTask.new do |rdoc|
