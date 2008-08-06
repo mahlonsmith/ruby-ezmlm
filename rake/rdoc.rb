@@ -13,6 +13,8 @@ BEGIN {
 
 require 'rake/rdoctask'
 
+gem 'darkfish-rdoc', '>= 1.1.0'
+
 ### Task: rdoc
 Rake::RDocTask.new do |rdoc|
 	rdoc.rdoc_dir = 'docs/api'
