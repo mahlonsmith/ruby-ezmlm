@@ -42,15 +42,20 @@ module Ezmlm
 	module_function
 	###############
 
+	### Find all directories that look like an Ezmlm list directory under the specified +listsdir+
+	### and return Pathname objects for each.
+	def find_directories( listsdir )
+		listsdir = Pathname.new( listsdir )
+		return Pathname.glob( listsdir + '*' ).select do |entry|
+			entry.directory? && ( entry + 'mailinglist' ).exist?
+		end
+	end
+	
 
 	### Iterate over each directory that looks like an Ezmlm list in the specified +listsdir+ and
 	### yield it as an Ezmlm::List object.
 	def each_list( listsdir )
-		listsdir = Pathname.new( listsdir )
-		Pathname.glob( listsdir + '*' ) do |entry|
-			next unless entry.directory?
-			next unless ( entry + 'mailinglist' ).exist?
-
+		find_directories( listsdir ).each do |entry|
 			yield( Ezmlm::List.new(entry) )
 		end
 	end

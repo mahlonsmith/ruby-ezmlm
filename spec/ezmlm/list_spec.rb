@@ -28,19 +28,23 @@ describe Ezmlm::List do
 	include Ezmlm::SpecHelpers
 
 
-	LISTDIR = Pathname.new( 'list' )
+	# Testing constants
+	TEST_LISTDIR               = Pathname.new( 'list' )
+	TEST_LIST_NAME             = 'waffle-lovers'
+	TEST_LIST_HOST             = 'lists.syrup.info'
+	TEST_OWNER                 = 'listowner@rumpus-the-whale.info'
+	TEST_CUSTOM_MODERATORS_DIR = '/foo/bar/clowns'
+	
 	TEST_SUBSCRIBERS = %w[
 		pete.chaffee@toadsmackers.com
 		dolphinzombie@alahalohamorra.com
 		piratebanker@yahoo.com
 	  ]
+
 	TEST_MODERATORS = %w[
 		dolphinzombie@alahalohamorra.com
 	  ]
-	TEST_LIST_NAME = 'waffle-lovers'
-	TEST_LIST_HOST = 'lists.syrup.info'
-	TEST_OWNER = 'listowner@rumpus-the-whale.info'
-	TEST_CUSTOM_MODERATORS_DIR = '/foo/bar/clowns'
+	
 	TEST_CONFIG = <<-"EOF".gsub( /^\t+/, '' )
 		F:-aBCDeFGHijKlMnOpQrStUVWXYZ
 		X:
@@ -60,7 +64,7 @@ describe Ezmlm::List do
 	EOF
 	
 
-	it "can create a new list"
+	it "can create a list"
 	it "can add a new subscriber"
 	it "can remove a current subscriber"
 	it "can edit the list's text files"
@@ -72,7 +76,7 @@ describe Ezmlm::List do
 	describe "list manager functions" do
 		
 		before( :each ) do
-			@listpath = LISTDIR.dup
+			@listpath = TEST_LISTDIR.dup
 			@list = Ezmlm::List.new( @listpath )
 		end
 		
@@ -121,7 +125,7 @@ describe Ezmlm::List do
 
 		
 		it "can return a list of subscribers' email addresses" do
-			subscribers_dir = LISTDIR + 'subscribers'
+			subscribers_dir = TEST_LISTDIR + 'subscribers'
 			
 			expectation = Pathname.should_receive( :glob ).with( subscribers_dir + '*' )
 
@@ -393,7 +397,7 @@ describe Ezmlm::List do
 	describe "archive functions" do
 	
 		before( :each ) do
-			@listpath = LISTDIR.dup
+			@listpath = TEST_LISTDIR.dup
 			@list = Ezmlm::List.new( @listpath )
 		end
 		
@@ -419,7 +423,7 @@ describe Ezmlm::List do
 		
 
 		
-		TEST_ARCHIVE_DIR = LISTDIR + 'archive'
+		TEST_ARCHIVE_DIR = TEST_LISTDIR + 'archive'
 		TEST_ARCHIVE_SUBDIRS = %w[ 0 1 2 3 4 5 6 7 8 9 10 11 12 13 ]
 		TEST_POST_FILES = %w[ 00 01 02 03 04 05 06 07 08 09 10 11 12 13 ]
 

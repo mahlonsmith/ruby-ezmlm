@@ -25,9 +25,9 @@ end
 describe Ezmlm do
 	include Ezmlm::SpecHelpers
 
-	LISTSDIR = '/tmp/lists'
+	TEST_LISTSDIR = '/tmp/lists'
 
-	it "can iterate over all mailing lists in a specified directory" do
+	it "can fetch a list of all mailing list subdirectories beneath a given directory" do
 		file_entry = mock( "plain file" )
 		file_entry.should_receive( :directory? ).and_return( false )
 
@@ -39,19 +39,28 @@ describe Ezmlm do
 		ml_dir_entry = stub( "directory with a mailinglist file", :directory? => true, :+ => existant_mlentry )
 		
 		Pathname.should_receive( :glob ).with( an_instance_of(Pathname) ).
-			and_yield( file_entry ).
-			and_yield( nonml_dir_entry ).
-			and_yield( ml_dir_entry )
+			and_return([ file_entry, nonml_dir_entry, ml_dir_entry ])
 
-		Ezmlm::List.should_receive( :new ).with( ml_dir_entry ).and_return( :listobject )
+		dirs = Ezmlm.find_directories( TEST_LISTSDIR )
+		
+		dirs.should have(1).member
+		dirs.should include( ml_dir_entry )
+	end
+	
+
+	it "can iterate over all mailing lists in a specified directory" do
+		Ezmlm.should_receive( :find_directories ).with( TEST_LISTSDIR ).and_return([ :listdir1, :listdir2 ])
+
+		Ezmlm::List.should_receive( :new ).with( :listdir1 ).and_return( :listobject1 )
+		Ezmlm::List.should_receive( :new ).with( :listdir2 ).and_return( :listobject2 )
 		
 		lists = []
-		Ezmlm.each_list( LISTSDIR ) do |list|
+		Ezmlm.each_list( TEST_LISTSDIR ) do |list|
 			lists << list
 		end
 		
-		lists.should have(1).member
-		lists.should include( :listobject )
+		lists.should have(2).members
+		lists.should include( :listobject1, :listobject2 )
 	end
 	
 end
