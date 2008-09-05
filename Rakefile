@@ -1,149 +1,290 @@
-#!rake -*- ruby -*-
+#!rake
 #
 # Ruby-Ezmlm rakefile
 #
-# Based on Ben Bleything's Rakefile for Linen (URL?)
+# Based on various other Rakefiles, especially one by Ben Bleything
 #
-# Copyright (c) 2007 LAIKA, Inc.
+# Copyright (c) 2008 The FaerieMUD Consortium
 #
-# Mistakes:
-#  * Michael Granger <mgranger@laika.com>
+# Authors:
+#  * LAIKA Information Systems <opensource@laika.com>
 #
 
 BEGIN {
 	require 'pathname'
 	basedir = Pathname.new( __FILE__ ).dirname
-	libdir = basedir + 'lib'
+
+	libdir = basedir + "lib"
+	extdir = basedir + "ext"
 
 	$LOAD_PATH.unshift( libdir.to_s ) unless $LOAD_PATH.include?( libdir.to_s )
+	$LOAD_PATH.unshift( extdir.to_s ) unless $LOAD_PATH.include?( extdir.to_s )
 }
 
 
+require 'rbconfig'
 require 'rubygems'
-
 require 'rake'
-require 'tmpdir'
-require 'pathname'
+require 'rake/rdoctask'
+require 'rake/testtask'
+require 'rake/packagetask'
+require 'rake/clean'
 
 $dryrun = false
 
-# Pathname constants
-BASEDIR       = Pathname.new( __FILE__ ).expand_path.dirname.relative_path_from( Pathname.getwd )
+### Config constants
+BASEDIR       = Pathname.new( __FILE__ ).dirname.relative_path_from( Pathname.getwd )
 BINDIR        = BASEDIR + 'bin'
 LIBDIR        = BASEDIR + 'lib'
+EXTDIR        = BASEDIR + 'ext'
 DOCSDIR       = BASEDIR + 'docs'
-VARDIR        = BASEDIR + 'var'
-WWWDIR        = VARDIR  + 'www'
-MANUALDIR     = DOCSDIR + 'manual'
-RDOCDIR       = DOCSDIR + 'rdoc'
-STATICWWWDIR  = WWWDIR  + 'static'
 PKGDIR        = BASEDIR + 'pkg'
-ARTIFACTS_DIR = Pathname.new( ENV['CC_BUILD_ARTIFACTS'] || '' )
-RAKE_TASKDIR  = BASEDIR + 'rake'
 
-TEXT_FILES    = %w( Rakefile README LICENSE ).
-	collect {|filename| BASEDIR + filename }
+PROJECT_NAME  = 'Ruby-Ezmlm'
+PKG_NAME      = PROJECT_NAME.downcase
+PKG_SUMMARY   = 'A programmatic interface to ezmlm-idx lists'
+VERSION_FILE  = LIBDIR + 'ezmlm.rb'
+PKG_VERSION   = VERSION_FILE.read[ /VERSION = '(\d+\.\d+\.\d+)'/, 1 ]
+PKG_FILE_NAME = "#{PKG_NAME.downcase}-#{PKG_VERSION}"
+GEM_FILE_NAME = "#{PKG_FILE_NAME}.gem"
+
+ARTIFACTS_DIR = Pathname.new( ENV['CC_BUILD_ARTIFACTS'] || 'artifacts' )
+
+TEXT_FILES    = %w( Rakefile ChangeLog README LICENSE ).collect {|filename| BASEDIR + filename }
+BIN_FILES     = Pathname.glob( BINDIR + '*' ).delete_if {|item| item =~ /\.svn/ }
+LIB_FILES     = Pathname.glob( LIBDIR + '**/*.rb' ).delete_if {|item| item =~ /\.svn/ }
+EXT_FILES     = Pathname.glob( EXTDIR + '**/*.{c,h,rb}' ).delete_if {|item| item =~ /\.svn/ }
 
 SPECDIR       = BASEDIR + 'spec'
-SPEC_FILES    = Pathname.glob( SPECDIR + '**/*_spec.rb' ).
-	delete_if {|item| item =~ /\.svn/ }
-# Ideally, this should be automatically generated.
-SPEC_EXCLUDES = 'spec,monkeypatches,/Library/Ruby,/var/lib,/usr/local/lib'
+SPECLIBDIR    = SPECDIR + 'lib'
+SPEC_FILES    = Pathname.glob( SPECDIR + '**/*_spec.rb' ).delete_if {|item| item =~ /\.svn/ } +
+                Pathname.glob( SPECLIBDIR + '**/*.rb' ).delete_if {|item| item =~ /\.svn/ }
 
-BIN_FILES     = Pathname.glob( BINDIR + '*').
-	delete_if {|item| item =~ /\.svn/ }
-LIB_FILES     = Pathname.glob( LIBDIR + '**/*.rb').
-	delete_if {|item| item =~ /\.svn/ }
+TESTDIR       = BASEDIR + 'tests'
+TEST_FILES    = Pathname.glob( TESTDIR + '**/*.tests.rb' ).delete_if {|item| item =~ /\.svn/ }
 
-RELEASE_FILES = BIN_FILES + TEXT_FILES + LIB_FILES + SPEC_FILES
+RAKE_TASKDIR  = BASEDIR + 'rake'
+RAKE_TASKLIBS = Pathname.glob( RAKE_TASKDIR + '*.rb' )
 
+LOCAL_RAKEFILE = BASEDIR + 'Rakefile.local'
+
+EXTRA_PKGFILES = []
+
+RELEASE_FILES = TEXT_FILES + 
+	SPEC_FILES + 
+	TEST_FILES + 
+	BIN_FILES +
+	LIB_FILES + 
+	EXT_FILES + 
+	RAKE_TASKLIBS +
+	EXTRA_PKGFILES
+
+RELEASE_FILES << LOCAL_RAKEFILE if LOCAL_RAKEFILE.exist?
+
+COVERAGE_MINIMUM = ENV['COVERAGE_MINIMUM'] ? Float( ENV['COVERAGE_MINIMUM'] ) : 85.0
+RCOV_EXCLUDES = 'spec,tests,/Library/Ruby,/var/lib,/usr/local/lib'
+RCOV_OPTS = [
+	'--exclude', RCOV_EXCLUDES,
+	'--xrefs',
+	'--save',
+	'--callsites',
+	#'--aggregate', 'coverage.data' # <- doesn't work as of 0.8.1.2.0
+  ]
+
+
+# Subversion constants -- directory names for releases and tags
+SVN_TRUNK_DIR    = 'trunk'
+SVN_RELEASES_DIR = 'releases'
+SVN_BRANCHES_DIR = 'branches'
+SVN_TAGS_DIR     = 'tags'
+
+SVN_DOTDIR       = BASEDIR + '.svn'
+SVN_ENTRIES      = SVN_DOTDIR + 'entries'
+
+
+### Load some task libraries that need to be loaded early
 require RAKE_TASKDIR + 'helpers.rb'
-
-### Package constants
-PKG_NAME      = 'ruby-ezmlm'
-PKG_VERSION_FROM = LIBDIR + 'ezmlm.rb'
-PKG_VERSION   = find_pattern_in_file( /VERSION = '(\d+\.\d+\.\d+)'/, PKG_VERSION_FROM ).first
-PKG_FILE_NAME = "#{PKG_NAME}-#{PKG_VERSION}"
-
-RELEASE_NAME  = "REL #{PKG_VERSION}"
-
 require RAKE_TASKDIR + 'svn.rb'
 require RAKE_TASKDIR + 'verifytask.rb'
 
-if Rake.application.options.trace
-	$trace = true
-	log "$trace is enabled"
-end
+# Define some constants that depend on the 'svn' tasklib
+PKG_BUILD = get_svn_rev( BASEDIR ) || 0
+SNAPSHOT_PKG_NAME = "#{PKG_FILE_NAME}.#{PKG_BUILD}"
+SNAPSHOT_GEM_NAME = "#{SNAPSHOT_PKG_NAME}.gem"
 
-if Rake.application.options.dryrun
-	$dryrun = true
-	log "$dryrun is enabled"
-	Rake.application.options.dryrun = false
-end
+# Documentation constants
+RDOCDIR = DOCSDIR + 'api'
+RDOC_OPTIONS = [
+	'-w', '4',
+	'-SHN',
+	'-i', '.',
+	'-m', 'README',
+	'-W', 'http://opensource.laika.com/wiki/ruby-ezmlm/browser/trunk/'
+  ]
 
-### Project Gemspec
-GEMSPEC = Gem::Specification.new do |gem|
-	pkg_build = get_svn_rev( BASEDIR ) || 0
+# Release constants
+SMTP_HOST = 'mail.faeriemud.org'
+SMTP_PORT = 465 # SMTP + SSL
+
+# Project constants
+PROJECT_HOST = 'deveiate.org'
+PROJECT_PUBDIR = "/usr/local/www/public/code"
+PROJECT_DOCDIR = "#{PROJECT_PUBDIR}/#{PKG_NAME}"
+PROJECT_SCPPUBURL = "#{PROJECT_HOST}:#{PROJECT_PUBDIR}"
+PROJECT_SCPDOCURL = "#{PROJECT_HOST}:#{PROJECT_DOCDIR}"
+
+# Rubyforge stuff
+RUBYFORGE_GROUP = 'laika'
+RUBYFORGE_PROJECT = 'ezmlm'
+
+# Gem dependencies: gemname => version
+DEPENDENCIES = {
+	'tmail' => '>=1.2.3.1',
+}
+
+# Developer Gem dependencies: gemname => version
+DEVELOPMENT_DEPENDENCIES = {
+	'amatch'      => '>= 0.2.3',
+	'rake'        => '>= 0.8.1',
+	'rcodetools'  => '>= 0.7.0.0',
+	'rcov'        => '>= 0',
+	'RedCloth'    => '>= 4.0.3',
+	'rspec'       => '>= 0',
+	'rubyforge'   => '>= 0',
+	'termios'     => '>= 0',
+	'text-format' => '>= 1.0.0',
+	'tmail'       => '>= 1.2.3.1',
+	'ultraviolet' => '>= 0.10.2',
+	'libxml-ruby' => '>= 0.8.3',
+}
+
+# Non-gem requirements: packagename => version
+REQUIREMENTS = {
+	'ezmlm-idx' => '>=0',
+}
+
+# RubyGem specification
+GEMSPEC   = Gem::Specification.new do |gem|
+	gem.name              = PKG_NAME.downcase
+	gem.version           = PKG_VERSION
+
+	gem.summary           = PKG_SUMMARY
+	gem.description       = <<-EOD
+	Ruby-Ezmlm provides a programmatic interface to ezmlm-idx lists, their archives, and the command
+	line utilities that interact with them. The library is intended to provide two sets of
+	functionality: the management and setup of lists, and programmatic access to the message archive.
+	EOD
+
+	gem.authors           = 'LAIKA Information Systems'
+	gem.email             = 'opensource@laika.com'
+	gem.homepage          = 'http://opensource.laika.com/wiki/ruby-ezmlm'
+	gem.rubyforge_project = RUBYFORGE_PROJECT
+
+	gem.has_rdoc          = true
+	gem.rdoc_options      = RDOC_OPTIONS
+
+	gem.bindir            = BINDIR.relative_path_from(BASEDIR).to_s
 	
-	gem.name    	= PKG_NAME
-	gem.version 	= "%s.%s" % [ PKG_VERSION, pkg_build ]
 
-	gem.summary     = "A Ruby programmatic interface to ezmlm-idx"
-	gem.description = "Ruby-Ezmlm is a Ruby programmatic interface to ezmlm-idx " +
-		"mailing lists, message archives, and command-line tools."
-
-	gem.authors  	= "Michael Granger, Jeremiah Jordan"
-	gem.email  		= "opensource@laika.com"
-	gem.homepage 	= "http://opensource.laika.com/wiki/ruby-ezmlm"
-
-	gem.rubyforge_project = 'laika'
-
-	gem.has_rdoc 	= true
-
-	gem.files      	= RELEASE_FILES.
+	gem.files             = RELEASE_FILES.
 		collect {|f| f.relative_path_from(BASEDIR).to_s }
-	gem.test_files 	= SPEC_FILES.
+	gem.test_files        = SPEC_FILES.
 		collect {|f| f.relative_path_from(BASEDIR).to_s }
-
-  	gem.add_dependency( 'tmail', '>= 1.2.3.1' )
+		
+	DEPENDENCIES.each do |name, version|
+		version = '>= 0' if version.length.zero?
+		gem.add_runtime_dependency( name, version )
+	end
+	
+	DEVELOPMENT_DEPENDENCIES.each do |name, version|
+		version = '>= 0' if version.length.zero?
+		gem.add_development_dependency( name, version )
+	end
+	
+	REQUIREMENTS.each do |name, version|
+		gem.requirements << [ name, version ].compact.join(' ')
+	end
 end
 
+# Manual-generation config
+MANUALDIR = DOCSDIR + 'manual'
 
-# Load task plugins
-Pathname.glob( RAKE_TASKDIR + '*.rb' ).each do |tasklib|
-	trace "Loading task lib #{tasklib}"
-	require tasklib
+$trace = Rake.application.options.trace ? true : false
+$dryrun = Rake.application.options.dryrun ? true : false
+
+
+# Load any remaining task libraries
+RAKE_TASKLIBS.each do |tasklib|
+	next if tasklib =~ %r{/(helpers|svn|verifytask)\.rb$}
+	begin
+		require tasklib
+	rescue ScriptError => err
+		fail "Task library '%s' failed to load: %s: %s" %
+			[ tasklib, err.class.name, err.message ]
+		trace "Backtrace: \n  " + err.backtrace.join( "\n  " )
+	rescue => err
+		log "Task library '%s' failed to load: %s: %s. Some tasks may not be available." %
+			[ tasklib, err.class.name, err.message ]
+		trace "Backtrace: \n  " + err.backtrace.join( "\n  " )
+	end
 end
 
+# Load any project-specific rules defined in 'Rakefile.local' if it exists
+import LOCAL_RAKEFILE if LOCAL_RAKEFILE.exist?
+
+
+#####################################################################
+###	T A S K S 	
+#####################################################################
 
 ### Default task
-task :default  => [:clean, :spec, 'coverage:verify', :package]
+task :default  => [:clean, :local, :spec, :rdoc, :package]
+
+### Task the local Rakefile can append to -- no-op by default
+task :local
 
 
 ### Task: clean
-desc "Clean pkg, coverage, and rdoc; remove .bak files"
-task :clean => [ :clobber_rdoc, :clobber_package, :clobber_coverage ] do
-	files = FileList['**/*.bak']
-	files.clear_exclude
-	File.rm( files ) unless files.empty?
-	FileUtils.rm_rf( 'artifacts' )
+CLEAN.include 'coverage'
+CLOBBER.include 'artifacts', 'coverage.info', PKGDIR
+
+# Target to hinge on ChangeLog updates
+file SVN_ENTRIES
+
+### Task: changelog
+file 'ChangeLog' => SVN_ENTRIES.to_s do |task|
+	log "Updating #{task.name}"
+
+	changelog = make_svn_changelog()
+	File.open( task.name, 'w' ) do |fh|
+		fh.print( changelog )
+	end
 end
 
 
-### Cruisecontrol task
+### Task: cruise (Cruisecontrol task)
 desc "Cruisecontrol build"
-task :cruise => [:clean, :coverage, :rdoc, :package] do |task|
+task :cruise => [:clean, :spec, :package] do |task|
 	raise "Artifacts dir not set." if ARTIFACTS_DIR.to_s.empty?
 	artifact_dir = ARTIFACTS_DIR.cleanpath
 	artifact_dir.mkpath
 	
-	$stderr.puts "Copying coverage stats..."
-	FileUtils.cp_r( 'coverage', artifact_dir )
-	
-	$stderr.puts "Copying documentation..."
-	FileUtils.cp_r( 'docs/api', artifact_dir + 'rdoc' )
+	coverage = BASEDIR + 'coverage'
+	if coverage.exist? && coverage.directory?
+		$stderr.puts "Copying coverage stats..."
+		FileUtils.cp_r( 'coverage', artifact_dir )
+	end
 	
 	$stderr.puts "Copying packages..."
 	FileUtils.cp_r( FileList['pkg/*'].to_a, artifact_dir )
+end
+
+
+desc "Update the build system to the latest version"
+task :update_build do
+	log "Updating the build system"
+	sh 'svn', 'up', RAKE_TASKDIR
+	log "Updating the Rakefile"
+	sh 'rake', '-f', RAKE_TASKDIR + 'Metarakefile'
 end
 

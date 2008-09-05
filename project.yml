@@ -1,0 +1,21 @@
+--- 
+rubyforge_project: ezmlm
+project_requirements: 
+  ezmlm-idx: ">=0"
+project_description: |-
+  Ruby-Ezmlm provides a programmatic interface to ezmlm-idx lists, their archives, and the command
+  line utilities that interact with them. The library is intended to provide two sets of
+  functionality: the management and setup of lists, and programmatic access to the message archive.
+rubyforge_group: laika
+author_name: LAIKA Information Systems
+project_homepage: http://opensource.laika.com/wiki/ruby-ezmlm
+project_dependencies: 
+  tmail: ">=1.2.3.1"
+project_summary: A programmatic interface to ezmlm-idx lists
+project_name: Ruby-Ezmlm
+version_file: ezmlm.rb
+additional_pkgfiles: []
+
+dev_dependencies: {}
+
+author_email: opensource@laika.com
