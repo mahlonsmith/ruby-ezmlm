@@ -1,39 +1,29 @@
 #!/usr/bin/ruby
+# vim: set nosta noet ts=4 sw=4:
 #
-# A Ruby interface to a single Ezmlm-idx mailing list directory
+# A Ruby interface to a single Ezmlm-idx mailing list directory.
 #
 # == Version
 #
 #  $Id$
 #
-# == Authors
-#
-# * Michael Granger <mgranger@laika.com>
-# * Jeremiah Jordan <jjordan@laika.com>
-#
-# :include: LICENSE
-# 
 #---
-#
-# Please see the file LICENSE in the base directory for licensing details.
-#
 
 require 'pathname'
 require 'ezmlm'
-require 'tmail'
+require 'mail'
 
 
 ### A Ruby interface to an ezmlm-idx mailing list directory
+###
 class Ezmlm::List
-	
+
 	### Create a new Ezmlm::List object for the specified +listdir+, which should be
 	### an ezmlm-idx mailing list directory.
+	###
 	def initialize( listdir )
-		listdir = Pathname.new( listdir ) if !listdir.is_a?( Pathname )
+		listdir = Pathname.new( listdir ) unless listdir.is_a?( Pathname )
 		@listdir = listdir
-
-		# Cached lookups
-		@config = nil
 	end
 
 
@@ -49,20 +39,20 @@ class Ezmlm::List
 	def name
 		return self.config[ 'L' ]
 	end
-	
+
 
 	### Return the configured host of the list
 	def host
 		return self.config[ 'H' ]
 	end
-	
+
 
 	### Return the configured address of the list (in list@host form)
 	def address
 		return "%s@%s" % [ self.name, self.host ]
 	end
 	alias_method :fullname, :address
-	
+
 
 	### Return the number of messages in the list archive
 	def message_count
@@ -91,23 +81,23 @@ class Ezmlm::List
 		unless @config
 			configfile = self.listdir + 'config'
 			raise "List config file %p does not exist" % [ configfile ] unless configfile.exist?
-			
+
 			@config = configfile.read.scan( /^(\S):([^\n]*)$/m ).inject({}) do |h,pair|
 				key,val = *pair
 				h[key] = val
 				h
 			end
 		end
-		
+
 		return @config
 	end
-	
+
 
 	### Return the email address of the list's owner.
 	def owner
 		self.config['5']
 	end
-	
+
 
 	### Fetch an Array of the email addresses for all of the list's subscribers.
 	def subscribers
@@ -132,10 +122,10 @@ class Ezmlm::List
 	### of a closed list.
 	def subscription_moderators
 		return [] unless self.closed?
-		
+
 		modsubfile = self.listdir + 'modsub'
 		remotefile = self.listdir + 'remote'
-		
+
 		subdir = nil
 		if modsubfile.exist? && modsubfile.read(1) == '/'
 			subdir = Pathname.new( modsubfile.read.chomp )
@@ -144,29 +134,29 @@ class Ezmlm::List
 		else
 			subdir = self.listdir + 'mod/subscribers'
 		end
-		
+
 		return self.read_subscriber_dir( subdir )
 	end
-	
-	
+
+
 	### Returns an Array of email addresses of people responsible for moderating posts
 	### sent to the list.
 	def message_moderators
 		return [] unless self.moderated?
-		
+
 		modpostfile = self.listdir + 'modpost'
 		subdir = nil
-		
+
 		if modpostfile.exist? && modpostfile.read(1) == '/'
 			subdir = Pathname.new( modpostfile.read.chomp )
 		else
 			subdir = self.listdir + 'mod/subscribers'
 		end
-		
+
 		return self.read_subscriber_dir( subdir )
 	end
-	
-	
+
+
 	### Return a TMail::Mail object loaded from the last post to the list. Returns
 	### +nil+ if there are no archived posts.
 	def last_post
@@ -189,25 +179,23 @@ class Ezmlm::List
 
 		last_post = TMail::Mail.load( last_post_path.to_s )
 	end
-	
-	
+
+
 
 	#########
 	protected
 	#########
 
-	### Read the hashed subscriber email addresses from the specified +directory+ and return them in 
+	### Read the hashed subscriber email addresses from the specified +directory+ and return them in
 	### an Array.
 	def read_subscriber_dir( directory )
 		rval = []
 		Pathname.glob( directory + '*' ) do |hashfile|
 			rval.push( hashfile.read.scan(/T([^\0]+)\0/) )
 		end
-		
+
 		return rval.flatten
 	end
-	
-	
-end
 
-# vim: set nosta noet ts=4 sw=4:
+end # class Ezmlm::List
+

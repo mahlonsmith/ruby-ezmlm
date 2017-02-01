@@ -1,3 +1,37 @@
+# Ruby-Ezmlm
+
+code
+: https://bitbucket.org/mahlon/Ruby-Ezmlm
+
+
+## Authors
+
+* Michael Granger <ged@faeriemud.org>
+* Jeremiah Jordan <jjordan@laika.com>
+* Mahlon E. Smith <mahlon@martini.nu>
+
+
+## Description
+
+This is a ruby interface for interacting with ezmlm-idx, an email list
+manager for use with the Qmail MTA.  (The -idx provides an extended
+feature set over the initial ezmlm environment.)
+
+http://untroubled.org/ezmlm/
+
+
+## Prerequisites
+
+* Ruby 2.2 or better
+
+
+## Installation
+
+    $ gem install ezmlm
+
+
+## License
+
 Copyright (c) 2017, Mahlon E. Smith <mahlon@martini.nu>
 All rights reserved.
 
