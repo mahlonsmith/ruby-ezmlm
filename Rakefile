@@ -46,7 +46,7 @@ spec = Gem::Specification.new do |s|
 	s.description  = <<-EOF
 This is a ruby interface for interacting with ezmlm-idx, an email list
 manager for use with the Qmail MTA.  (The -idx provides an extended
-feature set over the initial ezmlm environment.)
+feature set over the initial ezmlm environment), and the messages contained therein.
 	EOF
 	s.required_ruby_version = '>= 2'
 

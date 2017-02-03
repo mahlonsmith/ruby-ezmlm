@@ -15,7 +15,7 @@ code
 
 This is a ruby interface for interacting with ezmlm-idx, an email list
 manager for use with the Qmail MTA.  (The -idx provides an extended
-feature set over the initial ezmlm environment.)
+feature set over the initial ezmlm environment), and messages therein.
 
 http://untroubled.org/ezmlm/
 
@@ -28,6 +28,20 @@ http://untroubled.org/ezmlm/
 ## Installation
 
     $ gem install ezmlm
+
+
+## Limitations
+
+This library is designed to only work with lists stored on disk (the
+default), not the SQL backends.
+
+Address space (32 bit vs 64 bit) matters when ezmlm calculates hashes.
+If things aren't adding up, make sure this library is running on a
+machine with a matching address space as the list itself.  (Running this
+on a 64bit machine to talk to 32bit listserv isn't going to play well.)
+
+The option set offered with ezmlm-make is not fully ported, just the
+most common switches.  Patches welcome.
 
 
 ## License
