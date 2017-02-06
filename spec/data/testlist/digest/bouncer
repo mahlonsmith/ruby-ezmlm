@@ -1,0 +1,2 @@
+|/usr/local/bin/ezmlm-weed
+|/usr/local/bin/ezmlm-return -d '/tmp/woo/test'

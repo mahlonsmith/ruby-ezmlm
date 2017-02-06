@@ -12,545 +12,334 @@ require 'ezmlm'
 
 describe Ezmlm::List do
 
-	# Testing constants
-	TEST_LISTDIR               = Pathname.new( 'list' )
-	TEST_LIST_NAME             = 'waffle-lovers'
-	TEST_LIST_HOST             = 'lists.syrup.info'
-	TEST_OWNER                 = 'listowner@rumpus-the-whale.info'
-	TEST_CUSTOM_MODERATORS_DIR = '/foo/bar/clowns'
-
-	TEST_SUBSCRIBERS = %w[
-		pete.chaffee@toadsmackers.com
-		dolphinzombie@alahalohamorra.com
-		piratebanker@yahoo.com
-	  ]
-
-	TEST_MODERATORS = %w[
-		dolphinzombie@alahalohamorra.com
-	  ]
-
-	TEST_CONFIG = <<-"EOF".gsub( /^\t+/, '' )
-		F:-aBCDeFGHijKlMnOpQrStUVWXYZ
-		X:
-		D:/var/qmail/alias/lists/waffle-lovers/
-		T:/var/qmail/alias/.qmail-waffle-lovers
-		L:#{TEST_LIST_NAME}
-		H:#{TEST_LIST_HOST}
-		C:
-		0:
-		3:
-		4:
-		5:#{TEST_OWNER}
-		6:
-		7:
-		8:
-		9:
-	EOF
-
-
-	it "can create a list"
-	it "can add a new subscriber"
-	it "can remove a current subscriber"
-	it "can edit the list's text files"
-
-
-	###
-	### List manager functions
-	###
-	describe "list manager functions" do
-
-		before( :each ) do
-			@listpath = TEST_LISTDIR.dup
-			@list = Ezmlm::List.new( @listpath )
-		end
-
-
-		it "can return the configured list name" do
-			allow(@list).to receive( :config ).and_return({ 'L' => :the_list_name })
-			expect(@list.name).to eq(:the_list_name)
-		end
-
-
-		it "can return the configured list host" do
-			allow(@list).to receive( :config ).and_return({ 'H' => :the_list_host })
-			expect(@list.host).to eq(:the_list_host)
-		end
-
-
-		it "can return the configured list address" do
-			allow(@list).to receive( :config ).and_return({ 'L' => TEST_LIST_NAME, 'H' => TEST_LIST_HOST })
-			expect(@list.address).to eq("%s@%s" % [ TEST_LIST_NAME, TEST_LIST_HOST ])
-		end
-
-
-		CONFIG_KEYS = %w[ F X D T L H C 0 3 4 5 6 7 8 9 ]
-
-		it "can fetch the list config as a Hash" do
-			config_path = double( "Mock config path" )
-			expect(@listpath).to receive( :+ ).with( 'config' ).and_return( config_path )
-			expect(config_path).to receive( :exist? ).and_return( true )
-			expect(config_path).to receive( :read ).and_return( TEST_CONFIG )
-
-			expect(@list.config).to be_an_instance_of( Hash )
-			expect(@list.config.size).to eq(CONFIG_KEYS.length)
-			expect(@list.config.keys).to include( *CONFIG_KEYS )
-		end
-
-
-		it "raises an error if the list config file doesn't exist" do
-			config_path = double( "Mock config path" )
-			expect(@listpath).to receive( :+ ).with( 'config' ).and_return( config_path )
-			expect(config_path).to receive( :exist? ).and_return( false )
-
-			expect {
-				@list.config
-			}.to raise_error( RuntimeError, /does not exist/ )
-		end
-
-
-		it "can return a list of subscribers' email addresses" do
-			subscribers_dir = TEST_LISTDIR + 'subscribers'
-
-			expectation = expect(Pathname).to receive( :glob ).with( subscribers_dir + '*' )
-
-			TEST_SUBSCRIBERS.each do |email|
-				mock_subfile = double( "Mock subscribers file for '#{email}'" )
-				expect(mock_subfile).to receive( :read ).and_return( "T#{email}\0" )
-
-				expectation.and_yield( mock_subfile )
-			end
-
-			subscribers = @list.subscribers
-
-			expect(subscribers.size).to eq(TEST_SUBSCRIBERS.length)
-			expect(subscribers).to include( *TEST_SUBSCRIBERS )
-		end
-
-
-		### Subscriber moderation
-
-		it "knows that subscription moderation is enabled if the dir/modsub file exists" do
-			modsub_path_obj = double( "Mock 'modsub' path object" )
-			expect(@listpath).to receive( :+ ).with( 'modsub' ).and_return( modsub_path_obj )
-			expect(modsub_path_obj).to receive( :exist? ).and_return( true )
-
-			expect(@list).to be_closed()
-		end
-
-		it "knows that subscription moderation is enabled if the dir/remote file exists" do
-			modsub_path_obj = double( "Mock 'modsub' path object" )
-			expect(@listpath).to receive( :+ ).with( 'modsub' ).and_return( modsub_path_obj )
-			expect(modsub_path_obj).to receive( :exist? ).and_return( false )
-
-			remote_path_obj = double( "Mock 'remote' path object" )
-			expect(@listpath).to receive( :+ ).with( 'remote' ).and_return( remote_path_obj )
-			expect(remote_path_obj).to receive( :exist? ).and_return( true )
-
-			expect(@list).to be_closed()
-		end
-
-
-		it "knows that subscription moderation is disabled if neither the dir/modsub nor " +
-		   "dir/remote files exist" do
-			modsub_path_obj = double( "Mock 'modsub' path object" )
-			expect(@listpath).to receive( :+ ).with( 'modsub' ).and_return( modsub_path_obj )
-			expect(modsub_path_obj).to receive( :exist? ).and_return( false )
-
-			remote_path_obj = double( "Mock 'remote' path object" )
-			expect(@listpath).to receive( :+ ).with( 'remote' ).and_return( remote_path_obj )
-			expect(remote_path_obj).to receive( :exist? ).and_return( false )
-
-			expect(@list).not_to be_closed()
-		end
-
-
-		it "returns an empty array of subscription moderators for an open list" do
-			modsub_path_obj = double( "Mock 'modsub' path object" )
-			expect(@listpath).to receive( :+ ).with( 'modsub' ).and_return( modsub_path_obj )
-			expect(modsub_path_obj).to receive( :exist? ).and_return( false )
-
-			remote_path_obj = double( "Mock 'remote' path object" )
-			expect(@listpath).to receive( :+ ).with( 'remote' ).and_return( remote_path_obj )
-			expect(remote_path_obj).to receive( :exist? ).and_return( false )
-
-			expect(@list.subscription_moderators).to be_empty()
-		end
-
-		it "can return a list of subscription moderators' email addresses" do
-			# Test the moderation config files for existence
-			modsub_path_obj = double( "Mock 'modsub' path object" )
-			expect(@listpath).to receive( :+ ).with( 'modsub' ).twice.and_return( modsub_path_obj )
-			expect(modsub_path_obj).to receive( :exist? ).twice.and_return( true )
-			remote_path_obj = double( "Mock 'remote' path object" )
-			expect(@listpath).to receive( :+ ).with( 'remote' ).and_return( remote_path_obj )
-			expect(remote_path_obj).to receive( :exist? ).once.and_return( true )
-
-			# Try to read directory names from both config files
-			expect(modsub_path_obj).to receive( :read ).with( 1 ).and_return( nil )
-			expect(remote_path_obj).to receive( :read ).with( 1 ).and_return( nil )
-
-			# Read subscribers from the default directory
-			subscribers_dir = double( "Mock moderator subscribers directory" )
-			expect(@listpath).to receive( :+ ).with( 'mod/subscribers' ).and_return( subscribers_dir )
-			expect(subscribers_dir).to receive( :+ ).with( '*' ).and_return( :mod_sub_dir )
-			expectation = expect(Pathname).to receive( :glob ).with( :mod_sub_dir )
-
-			TEST_MODERATORS.each do |email|
-				mock_subfile = double( "Mock subscribers file for '#{email}'" )
-				expect(mock_subfile).to receive( :read ).and_return( "T#{email}\0" )
-
-				expectation.and_yield( mock_subfile )
-			end
-
-			mods = @list.subscription_moderators
-			expect(mods.size).to eq(TEST_MODERATORS.length)
-			expect(mods).to include( *TEST_MODERATORS )
-		end
-
-
-		it "can return a list of subscription moderators' email addresses when the moderators " +
-		   "directory has been customized" do
-			# Test the moderation config files for existence
-			modsub_path_obj = double( "Mock 'modsub' path object" )
-			expect(@listpath).to receive( :+ ).with( 'modsub' ).twice.and_return( modsub_path_obj )
-			expect(modsub_path_obj).to receive( :exist? ).twice.and_return( true )
-			expect(@listpath).to receive( :+ ).with( 'remote' )
-
-			# Try to read directory names from both config files
-			expect(modsub_path_obj).to receive( :read ).with( 1 ).and_return( '/' )
-			expect(modsub_path_obj).to receive( :read ).with().and_return( TEST_CUSTOM_MODERATORS_DIR )
-
-			custom_mod_path = double( "Mock path object for customized moderator dir" )
-			expect(Pathname).to receive( :new ).with( TEST_CUSTOM_MODERATORS_DIR ).and_return( custom_mod_path )
-
-			# Read subscribers from the default file
-			expect(custom_mod_path).to receive( :+ ).with( '*' ).and_return( :mod_sub_dir )
-			expectation = expect(Pathname).to receive( :glob ).with( :mod_sub_dir )
-
-			TEST_MODERATORS.each do |email|
-				mock_subfile = double( "Mock subscribers file for '#{email}'" )
-				expect(mock_subfile).to receive( :read ).and_return( "T#{email}\0" )
-
-				expectation.and_yield( mock_subfile )
-			end
-
-			mods = @list.subscription_moderators
-			expect(mods.size).to eq(TEST_MODERATORS.length)
-			expect(mods).to include( *TEST_MODERATORS )
-		end
-
-		it "can get a list of modererators when remote subscription moderation is enabled" +
-           " and the modsub configuration is empty" do
-			# Test the moderation config files for existence
-			modsub_path_obj = double( "Mock 'modsub' path object" )
-			expect(@listpath).to receive( :+ ).with( 'modsub' ).twice.and_return( modsub_path_obj )
-			expect(modsub_path_obj).to receive( :exist? ).twice.and_return( false )
-            remote_path_obj = double( "Mock 'remote' path object" )
-			expect(@listpath).to receive( :+ ).with( 'remote' ).twice.and_return( remote_path_obj )
-            expect(remote_path_obj).to receive( :exist? ).twice.and_return( true )
-
-			# Try to read directory names from both config files
-			expect(remote_path_obj).to receive( :read ).with( 1 ).and_return( '/' )
-			expect(remote_path_obj).to receive( :read ).with().and_return( TEST_CUSTOM_MODERATORS_DIR )
-
-			custom_mod_path = double( "Mock path object for customized moderator dir" )
-			expect(Pathname).to receive( :new ).with( TEST_CUSTOM_MODERATORS_DIR ).and_return( custom_mod_path )
-
-			# Read subscribers from the default file
-			expect(custom_mod_path).to receive( :+ ).with( '*' ).and_return( :mod_sub_dir )
-			expectation = expect(Pathname).to receive( :glob ).with( :mod_sub_dir )
-
-			TEST_MODERATORS.each do |email|
-				mock_subfile = double( "Mock subscribers file for '#{email}'" )
-				expect(mock_subfile).to receive( :read ).and_return( "T#{email}\0" )
-
-				expectation.and_yield( mock_subfile )
-			end
-
-			mods = @list.subscription_moderators
-			expect(mods.size).to eq(TEST_MODERATORS.length)
-			expect(mods).to include( *TEST_MODERATORS )
-		end
-
-		### Message moderation
-
-		it "knows that subscription moderation is enabled if the dir/modpost file exists" do
-			modpost_path_obj = double( "Mock 'modpost' path object" )
-			expect(@listpath).to receive( :+ ).with( 'modpost' ).and_return( modpost_path_obj )
-			expect(modpost_path_obj).to receive( :exist? ).and_return( true )
-
-			expect(@list).to be_moderated()
-		end
-
-		it "knows that subscription moderation is disabled if the dir/modpost file doesn't exist" do
-			modpost_path_obj = double( "Mock 'modpost' path object" )
-			expect(@listpath).to receive( :+ ).with( 'modpost' ).and_return( modpost_path_obj )
-			expect(modpost_path_obj).to receive( :exist? ).and_return( false )
-
-			expect(@list).not_to be_moderated()
-		end
-
-
-		it "returns an empty array of message moderators for an open list" do
-			modpost_path_obj = double( "Mock 'modpost' path object" )
-			expect(@listpath).to receive( :+ ).with( 'modpost' ).and_return( modpost_path_obj )
-			expect(modpost_path_obj).to receive( :exist? ).and_return( false )
-
-			expect(@list.message_moderators).to be_empty()
-		end
-
-
-		it "can return a list of message moderators' email addresses" do
-			# Test the moderation config file for existence
-			modpost_path_obj = double( "Mock 'modpost' path object" )
-			expect(@listpath).to receive( :+ ).with( 'modpost' ).twice.and_return( modpost_path_obj )
-			expect(modpost_path_obj).to receive( :exist? ).twice.and_return( true )
-
-			# Try to read directory names from the config file
-			expect(modpost_path_obj).to receive( :read ).with( 1 ).and_return( nil )
-
-			# Read subscribers from the default directory
-			subscribers_dir = double( "Mock moderator subscribers directory" )
-			expect(@listpath).to receive( :+ ).with( 'mod/subscribers' ).and_return( subscribers_dir )
-			expect(subscribers_dir).to receive( :+ ).with( '*' ).and_return( :mod_sub_dir )
-			expectation = expect(Pathname).to receive( :glob ).with( :mod_sub_dir )
-
-			TEST_MODERATORS.each do |email|
-				mock_subfile = double( "Mock subscribers file for '#{email}'" )
-				expect(mock_subfile).to receive( :read ).and_return( "T#{email}\0" )
-
-				expectation.and_yield( mock_subfile )
-			end
-
-			mods = @list.message_moderators
-			expect(mods.size).to eq(TEST_MODERATORS.length)
-			expect(mods).to include( *TEST_MODERATORS )
-		end
-
-
-		it "can return a list of message moderators' email addresses when the moderators " +
-		   "directory has been customized" do
-			# Test the moderation config files for existence
-			modpost_path_obj = double( "Mock 'modpost' path object" )
-			expect(@listpath).to receive( :+ ).with( 'modpost' ).twice.and_return( modpost_path_obj )
-			expect(modpost_path_obj).to receive( :exist? ).twice.and_return( true )
-
-			# Try to read directory names from both config files
-			expect(modpost_path_obj).to receive( :read ).with( 1 ).and_return( '/' )
-			expect(modpost_path_obj).to receive( :read ).with().and_return( TEST_CUSTOM_MODERATORS_DIR )
-
-			custom_mod_path = double( "Mock path object for customized moderator dir" )
-			expect(Pathname).to receive( :new ).with( TEST_CUSTOM_MODERATORS_DIR ).and_return( custom_mod_path )
-
-			# Read subscribers from the default file
-			expect(custom_mod_path).to receive( :+ ).with( '*' ).and_return( :mod_sub_dir )
-			expectation = expect(Pathname).to receive( :glob ).with( :mod_sub_dir )
-
-			TEST_MODERATORS.each do |email|
-				mock_subfile = double( "Mock subscribers file for '#{email}'" )
-				expect(mock_subfile).to receive( :read ).and_return( "T#{email}\0" )
-
-				expectation.and_yield( mock_subfile )
-			end
-
-			mods = @list.message_moderators
-			expect(mods.size).to eq(TEST_MODERATORS.length)
-			expect(mods).to include( *TEST_MODERATORS )
-		end
-
-
-		### List owner
-
-		it "returns nil when the list doesn't have an owner in its config" do
-			allow(@list).to receive( :config ).and_return({ '5' => nil })
-			expect(@list.owner).to eq(nil)
-		end
-
-
-		it "can return the email address of the list owner" do
-			allow(@list).to receive( :config ).and_return({ '5' => TEST_OWNER })
-			expect(@list.owner).to eq(TEST_OWNER)
-		end
-
+	before( :each ) do
+		@listdir = make_listdir()
+	end
+
+	after( :each ) do
+		rm_r( @listdir )
+	end
+
+	let( :list ) do
+		described_class.new( @listdir )
 	end
 
 
-	###
-	### Archive functions
-	###
-	describe "archive functions" do
+	it "can return the list name" do
+		expect( list.name ).to eq( TEST_LIST_NAME )
+	end
 
-		before( :each ) do
-			@listpath = TEST_LISTDIR.dup
-			@list = Ezmlm::List.new( @listpath )
-		end
+	it "can return the list host" do
+		expect( list.host ).to eq( TEST_LIST_HOST )
+	end
 
+	it "can return the list address" do
+		expect( list.address ).to eq( TEST_LIST_NAME + '@' + TEST_LIST_HOST )
+	end
 
-		it "can return the count of archived posts" do
-			numpath_obj = double( "num file path object" )
-			expect(@listpath).to receive( :+ ).with( 'num' ).and_return( numpath_obj )
+	it "returns nil if the list owner isn't an email address" do
+		expect( list.owner ).to eq( nil )
+	end
 
-			expect(numpath_obj).to receive( :exist? ).and_return( true )
-			expect(numpath_obj).to receive( :read ).and_return( "1723:123123123" )
-
-			expect(@list.message_count).to eq(1723)
-		end
-
-		it "can return the count of archived posts to a list that hasn't been posted to" do
-			numpath_obj = double( "num file path object" )
-			expect(@listpath).to receive( :+ ).with( 'num' ).and_return( numpath_obj )
-
-			expect(numpath_obj).to receive( :exist? ).and_return( false )
-
-			expect(@list.message_count).to eq(0)
-		end
-
-
-
-		TEST_ARCHIVE_DIR = TEST_LISTDIR + 'archive'
-		TEST_ARCHIVE_SUBDIRS = %w[ 0 1 2 3 4 5 6 7 8 9 10 11 12 13 ]
-		TEST_POST_FILES = %w[ 00 01 02 03 04 05 06 07 08 09 10 11 12 13 ]
-
-		before( :each ) do
-			@archive_dir = TEST_ARCHIVE_DIR.dup
-			@archive_subdirs = TEST_ARCHIVE_SUBDIRS.dup
-			@archive_subdir_paths = TEST_ARCHIVE_SUBDIRS.collect {|pn| TEST_ARCHIVE_DIR + pn }
-			@archive_post_paths = TEST_POST_FILES.collect {|pn|
-				TEST_ARCHIVE_DIR + TEST_ARCHIVE_SUBDIRS.last + pn
-			  }
-		end
-
-
-		it "can return a TMail::Mail object parsed from the last archived post" do
-			# need to find the last message
-			archive_path_obj = double( "archive path" )
-
-			expect(@listpath).to receive( :+ ).with( 'archive' ).and_return( archive_path_obj )
-			expect(archive_path_obj).to receive( :exist? ).and_return( true )
-
-			# Find the last numbered directory under the archive dir
-			expect(archive_path_obj).to receive( :+ ).with( '[0-9]*' ).
-				and_return( :archive_dir_globpath )
-			expect(Pathname).to receive( :glob ).with( :archive_dir_globpath ).
-				and_return( @archive_subdir_paths )
-
-			# Find the last numbered file under the last numbered directory we found
-			# above.
-			expect(@archive_subdir_paths.last).to receive( :+ ).with( '[0-9]*' ).
-				and_return( :archive_post_pathglob )
-			expect(Pathname).to receive( :glob ).with( :archive_post_pathglob ).
-				and_return( @archive_post_paths )
-
-			expect(TMail::Mail).to receive( :load ).with( @archive_post_paths.last.to_s ).
-				and_return( :mail_object )
-
-			expect(@list.last_post).to eq(:mail_object)
-		end
-
-
-		it "returns nil for the last post if there is no archive directory for the list" do
-			archive_path_obj = double( "archive path" )
-
-			expect(@listpath).to receive( :+ ).with( 'archive' ).and_return( archive_path_obj )
-			expect(archive_path_obj).to receive( :exist? ).and_return( false )
-			expect(@list.last_post).to eq(nil)
-		end
-
-
-		it "returns nil for the last post if there haven't been any posts to the list" do
-			archive_path_obj = double( "archive path" )
-			mail_object = double( "Mock TMail object" )
-
-			expect(@listpath).to receive( :+ ).with( 'archive' ).and_return( archive_path_obj )
-			expect(archive_path_obj).to receive( :exist? ).and_return( true )
-
-			# Find the last numbered directory under the archive dir
-			expect(archive_path_obj).to receive( :+ ).with( '[0-9]*' ).
-				and_return( :archive_dir_globpath )
-			expect(Pathname).to receive( :glob ).with( :archive_dir_globpath ).and_return( [] )
-
-			expect(@list.last_post).to eq(nil)
-		end
-
-
-		it "raises a RuntimeError if the last archive directory doesn't have any messages in it" do
-			archive_path_obj = double( "archive path" )
-			mail_object = double( "Mock TMail object" )
-
-			expect(@listpath).to receive( :+ ).with( 'archive' ).and_return( archive_path_obj )
-			expect(archive_path_obj).to receive( :exist? ).and_return( true )
-
-			# Find the last numbered directory under the archive dir
-			expect(archive_path_obj).to receive( :+ ).with( '[0-9]*' ).
-				and_return( :archive_dir_globpath )
-			expect(Pathname).to receive( :glob ).with( :archive_dir_globpath ).
-				and_return( @archive_subdir_paths )
-
-			expect(@archive_subdir_paths.last).to receive( :+ ).with( '[0-9]*' ).
-				and_return( :archive_post_pathglob )
-			expect(Pathname).to receive( :glob ).with( :archive_post_pathglob ).
-				and_return( [] )
-
-			expect {
-				@list.last_post
-			}.to raise_error( RuntimeError, /unexpectedly empty/i )
-		end
-
-
-		it "can fetch the date of the last archived post" do
-			mail_object = double( "Mock TMail object" )
-
-			expect(@list).to receive( :last_post ).and_return( mail_object )
-			expect(mail_object).to receive( :date ).and_return( :the_message_date )
-
-			expect(@list.last_message_date).to eq(:the_message_date)
-		end
-
-
-		it "can fetch the date of the last archived post" do
-			mail_object = double( "Mock TMail object" )
-
-			expect(@list).to receive( :last_post ).and_return( mail_object )
-			expect(mail_object).to receive( :date ).and_return( :the_message_date )
-
-			expect(@list.last_message_date).to eq(:the_message_date)
-		end
-
-
-		it "can fetch the author of the last archived post" do
-			mail_object = double( "Mock TMail object" )
-
-			expect(@list).to receive( :last_post ).and_return( mail_object )
-			expect(mail_object).to receive( :from ).and_return( :the_message_author )
-
-			expect(@list.last_message_author).to eq(:the_message_author)
-		end
-
-
-		it "can fetch the subject of the last archived post" do
-			mail_object = double( "Mock TMail object" )
-
-			expect(@list).to receive( :last_post ).and_return( mail_object )
-			expect(mail_object).to receive( :from ).and_return( :the_message_author )
-
-			expect(@list.last_message_author).to eq(:the_message_author)
-		end
-
+	it "can return an email address owner" do
+		expect( list ).to receive( :read ).with( 'owner' ).and_return( TEST_OWNER )
+		expect( list.owner ).to eq( TEST_OWNER )
 	end
 
 
-	it "can fetch the body of an archived post by message id"
-	it "can fetch the header of an archived post by message id"
+	it "can add a new subscriber" do
+		list.add_subscriber( *TEST_SUBSCRIBERS )
+		expect( list.is_subscriber?( TEST_SUBSCRIBERS.first ) ).to be_truthy
+	end
 
-	it "can return a hash of the subjects of all archived posts to message ids"
-	it "can return an Array of the subjects of all archived posts"
+	it "can return the list of subscibers" do
+		list.add_subscriber( *TEST_SUBSCRIBERS )
+		list.add_subscriber( 'notanemailaddress' )
+		expect( list.subscribers.length ).to eq( 3 )
+		expect( list.subscribers ).to include( TEST_SUBSCRIBERS.first )
+	end
 
-	it "can return a hash of the threads of all archived posts to message ids"
-	it "can return an Array of the threads of all archived posts"
+	it "can remove a current subscriber" do
+		list.add_subscriber( *TEST_SUBSCRIBERS )
+		list.remove_subscriber( 'notanemailaddress' )
+		list.remove_subscriber( TEST_MODERATORS.first )
+		expect( list.subscribers.length ).to eq( 2 )
+	end
 
-	it "can return a hash of the authors of all archived posts to message ids"
-	it "can return an Array of the authors of all archived posts"
 
+	it "can add a new moderator" do
+		list.add_moderator( *TEST_MODERATORS )
+		expect( list.is_moderator?( TEST_MODERATORS.first ) ).to be_truthy
+	end
+
+	it "can return the list of moderators" do
+		list.add_moderator( *TEST_MODERATORS )
+		expect( list.moderators.length ).to eq( 1 )
+		expect( list.moderators ).to include( TEST_MODERATORS.first )
+	end
+
+	it "can remove a current moderator" do
+		list.add_moderator( *TEST_MODERATORS )
+		list.remove_moderator( TEST_MODERATORS.first )
+		expect( list.moderators ).to be_empty
+	end
+
+
+	it "can add a blacklisted address" do
+		list.add_blacklisted( *TEST_MODERATORS )
+		expect( list.is_blacklisted?( TEST_MODERATORS.first ) ).to be_truthy
+	end
+
+	it "can return the list of blacklisted addresses" do
+		list.add_blacklisted( *TEST_MODERATORS )
+		expect( list.blacklisted.length ).to eq( 1 )
+		expect( list.blacklisted ).to include( TEST_MODERATORS.first )
+	end
+
+	it "can remove a blacklisted address" do
+		list.add_blacklisted( *TEST_MODERATORS )
+		list.remove_blacklisted( TEST_MODERATORS.first )
+		expect( list.blacklisted ).to be_empty
+	end
+
+
+	it "can add an allowed address" do
+		list.add_allowed( *TEST_MODERATORS )
+		expect( list.is_allowed?( TEST_MODERATORS.first ) ).to be_truthy
+	end
+
+	it "can return the list of allowed addresses" do
+		list.add_allowed( *TEST_MODERATORS )
+		expect( list.allowed.length ).to eq( 1 )
+		expect( list.allowed ).to include( TEST_MODERATORS.first )
+	end
+
+	it "can remove a allowed address" do
+		list.add_allowed( *TEST_MODERATORS )
+		list.remove_allowed( TEST_MODERATORS.first )
+		expect( list.allowed ).to be_empty
+	end
+
+
+	it 'can return the current threading state' do
+		expect( list.threaded? ).to be_falsey
+	end
+
+	it 'can set the threading state' do
+		list.threaded = true
+		expect( list.threaded? ).to be_truthy
+	end
+
+
+	it 'can return the current public/private state' do
+		expect( list.public? ).to be_truthy
+		expect( list.private? ).to be_falsey
+	end
+
+	it 'can set the privacy state' do
+		list.public = false
+		expect( list.public? ).to be_falsey
+		expect( list.private? ).to be_truthy
+
+		list.private = false
+		expect( list.private? ).to be_falsey
+		expect( list.public? ).to be_truthy
+	end
+
+
+	it 'can set the remote subscription state' do
+		expect( list.remote_subscriptions? ).to be_falsey
+		list.remote_subscriptions = true
+		expect( list.remote_subscriptions? ).to be_truthy
+		list.remote_subscriptions = false
+		expect( list.remote_subscriptions? ).to be_falsey
+	end
+
+
+	it 'can set subscription moderation state' do
+		expect( list.moderated_subscriptions? ).to be_falsey
+		list.moderated_subscriptions = true
+		expect( list.moderated_subscriptions? ).to be_truthy
+		list.moderated_subscriptions = false
+		expect( list.moderated_subscriptions? ).to be_falsey
+	end
+
+
+	it 'can set posting moderation state' do
+		expect( list.moderated? ).to be_falsey
+		list.moderated = true
+		expect( list.moderated? ).to be_truthy
+		list.moderated = false
+		expect( list.moderated? ).to be_falsey
+	end
+
+
+	it 'can set moderation-only posting' do
+		expect( list.moderator_posts_only? ).to be_falsey
+		list.moderator_posts_only = true
+		expect( list.moderator_posts_only? ).to be_truthy
+		list.moderator_posts_only = false
+		expect( list.moderator_posts_only? ).to be_falsey
+	end
+
+
+	it 'can set user-only posting' do
+		expect( list.user_posts_only? ).to be_falsey
+		list.user_posts_only = true
+		expect( list.user_posts_only? ).to be_truthy
+		list.user_posts_only = false
+		expect( list.user_posts_only? ).to be_falsey
+	end
+
+
+	it 'user+moderation together sets non-subscriber moderation' do
+		expect( list.user_posts_only? ).to be_falsey
+		expect( list.moderated? ).to be_falsey
+
+		list.moderated = true
+		list.user_posts_only = true
+
+		expect( list.listdir + 'noreturnposts' ).to exist
+
+		list.moderated = false
+		expect( list.listdir + 'noreturnposts' ).to_not exist
+	end
+
+
+	it 'can set archival status' do
+		expect( list.archived? ).to be_truthy
+		list.archive = false
+		expect( list.archived? ).to be_falsey
+		list.archive = true
+		expect( list.archived? ).to be_truthy
+	end
+
+
+	it 'can limit archive access to moderators only' do
+		expect( list.private_archive? ).to be_falsey
+		list.private_archive = true
+		expect( list.private_archive? ).to be_truthy
+		list.private_archive = false
+		expect( list.private_archive? ).to be_falsey
+	end
+
+
+	it 'can limit archive access to list subscribers only' do
+		expect( list.guarded_archive? ).to be_falsey
+		list.guarded_archive = true
+		expect( list.guarded_archive? ).to be_truthy
+		list.guarded_archive = false
+		expect( list.guarded_archive? ).to be_falsey
+	end
+
+
+	it 'can toggle digest status' do
+		expect( list.digested? ).to be_falsey
+		list.digest = true
+		expect( list.digested? ).to be_truthy
+		list.digest = false
+		expect( list.digested? ).to be_falsey
+	end
+
+	it 'returns a default digest kbyte size' do
+		expect( list.digest_kbytesize ).to eq( 64 )
+	end
+
+	it 'can set a new digest kbyte size' do
+		list.digest_kbytesize = 300
+		expect( list.digest_kbytesize ).to eq( 300 )
+	end
+
+	it 'returns a default digest message count' do
+		expect( list.digest_count ).to eq( 10 )
+	end
+
+	it 'can set a new digest message count' do
+		list.digest_count = 25
+		expect( list.digest_count ).to eq( 25 )
+	end
+
+	it 'returns a default digest timeout' do
+		expect( list.digest_timeout ).to eq( 48 )
+	end
+
+	it 'can set a new digest timeout' do
+		list.digest_timeout = 24
+		expect( list.digest_timeout ).to eq( 24 )
+	end
+
+
+	it 'can set subscription confirmation' do
+		expect( list.confirm_subscriptions? ).to be_truthy
+		list.confirm_subscriptions = false
+		expect( list.confirm_subscriptions? ).to be_falsey
+		list.confirm_subscriptions = true
+		expect( list.confirm_subscriptions? ).to be_truthy
+	end
+
+	it 'can set unsubscription confirmation' do
+		expect( list.confirm_unsubscriptions? ).to be_truthy
+		list.confirm_unsubscriptions = false
+		expect( list.confirm_unsubscriptions? ).to be_falsey
+		list.confirm_unsubscriptions = true
+		expect( list.confirm_unsubscriptions? ).to be_truthy
+	end
+
+
+	it 'can set message posting confirmation' do
+		expect( list.confirm_postings? ).to be_falsey
+		list.confirm_postings = true
+		expect( list.confirm_postings? ).to be_truthy
+		list.confirm_postings = false
+		expect( list.confirm_postings? ).to be_falsey
+	end
+
+
+	it 'can toggle remote subscriber lists for moderators' do
+		expect( list.allow_remote_listing? ).to be_falsey
+		list.allow_remote_listing = true
+		expect( list.allow_remote_listing? ).to be_truthy
+		list.allow_remote_listing = false
+		expect( list.allow_remote_listing? ).to be_falsey
+	end
+
+
+	it 'can toggle bounce management' do
+		expect( list.bounce_warnings? ).to be_truthy
+		list.bounce_warnings = false
+		expect( list.bounce_warnings? ).to be_falsey
+		list.bounce_warnings = true
+		expect( list.bounce_warnings? ).to be_truthy
+	end
+
+
+	it 'returns a default max message size' do
+		expect( list.maximum_message_size ).to eq( 0 )
+	end
+
+	it 'can set a new max message size' do
+		list.maximum_message_size = 1024 * 300
+		expect( list.maximum_message_size ).to eq( 307200 )
+	end
+
+
+	it 'can return the message count for a pristine list' do
+		expect( list.message_count ).to eq( 0 )
+	end
 end
+
+
+
+	# it "can fetch the body of an archived post by message id"
+	# it "can fetch the header of an archived post by message id"
+
+	# it "can return a hash of the subjects of all archived posts to message ids"
+	# it "can return an Array of the subjects of all archived posts"
+
+	# it "can return a hash of the threads of all archived posts to message ids"
+	# it "can return an Array of the threads of all archived posts"
+
+	# it "can return a hash of the authors of all archived posts to message ids"
+	# it "can return an Array of the authors of all archived posts"
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 # vim: set nosta noet ts=4 sw=4:
 #
-# A Ruby programmatic interface to the ezmlm-idx mailing list system
+# A Ruby interface to the ezmlm-idx mailing list system.
 #
 # == Version
 #
@@ -27,19 +27,19 @@ module Ezmlm
 	module_function
 	###############
 
-	### Find all directories that look like an Ezmlm list directory under the specified +listsdir+
-	### and return Pathname objects for each.
+	### Find all directories that look like an Ezmlm list directory under
+	### the specified +listsdir+ and return Pathname objects for each.
 	###
 	def find_directories( listsdir )
 		listsdir = Pathname.new( listsdir )
-		return Pathname.glob( listsdir + '*' ).select do |entry|
+		return Pathname.glob( listsdir + '*' ).sort.select do |entry|
 			entry.directory? && ( entry + 'mailinglist' ).exist?
 		end
 	end
 
 
-	### Iterate over each directory that looks like an Ezmlm list in the specified +listsdir+ and
-	### yield it as an Ezmlm::List object.
+	### Iterate over each directory that looks like an Ezmlm list in the
+	### specified +listsdir+ and yield it as an Ezmlm::List object.
 	###
 	def each_list( listsdir )
 		find_directories( listsdir ).each do |entry|

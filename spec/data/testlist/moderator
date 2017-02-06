@@ -1,0 +1,5 @@
+|/usr/local/bin/ezmlm-weed
+|/usr/local/bin/ezmlm-moderate '/tmp/woo/test'
+|if test -f '/tmp/woo/test/threaded'; then /usr/local/bin/ezmlm-archive '/tmp/woo/test' || exit 0; fi
+|/usr/local/bin/ezmlm-clean '/tmp/woo/test' || exit 0
+|/usr/local/bin/ezmlm-warn '/tmp/woo/test' || exit 0

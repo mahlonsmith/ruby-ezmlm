@@ -6,23 +6,26 @@ code
 
 ## Authors
 
+* Mahlon E. Smith <mahlon@martini.nu>
 * Michael Granger <ged@faeriemud.org>
 * Jeremiah Jordan <jjordan@laika.com>
-* Mahlon E. Smith <mahlon@martini.nu>
 
 
 ## Description
 
 This is a ruby interface for interacting with ezmlm-idx, an email list
-manager for use with the Qmail MTA.  (The -idx provides an extended
-feature set over the initial ezmlm environment), and messages therein.
+manager for use with the Qmail MTA, and the messages contained therein.
+(The -idx provides an extended feature set over the original ezmlm
+environment.)
 
 http://untroubled.org/ezmlm/
+
+This was tested against ezmlm-idx 7.2.2.
 
 
 ## Prerequisites
 
-* Ruby 2.2 or better
+* Ruby 2.1 or better
 
 
 ## Installation
@@ -30,7 +33,15 @@ http://untroubled.org/ezmlm/
     $ gem install ezmlm
 
 
+## TODO
+
+  - Text file editing (trailers, etc.)
+  - Header / mime list accessors
+
+
 ## Limitations
+
+This library doesn't create new lists from scratch.  Use ezmlm-make.
 
 This library is designed to only work with lists stored on disk (the
 default), not the SQL backends.
@@ -40,8 +51,11 @@ If things aren't adding up, make sure this library is running on a
 machine with a matching address space as the list itself.  (Running this
 on a 64bit machine to talk to 32bit listserv isn't going to play well.)
 
-The option set offered with ezmlm-make is not fully ported, just the
-most common switches.  Patches welcome.
+A lot of the fine tuning niceties of ezmlm come as flag options to
+the various ezmlm-* binaries.  This library largely just deals with
+ezmlm-make flags for global list behaviors.  (For example, see the man
+page for ezmlm-reject.)  Patches are welcome if you'd like these sorts
+of miscellanous things included.
 
 
 ## License

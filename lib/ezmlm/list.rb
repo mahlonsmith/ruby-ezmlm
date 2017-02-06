@@ -77,12 +77,15 @@ class Ezmlm::List
 	end
 
 
-	### Return the number of messages in the list archive.
+	### Returns +true+ if +address+ is a subscriber to this list.
 	###
-	def message_count
-		count = self.read( 'archnum' )
-		return count ? Integer( count ) : 0
+	def include?( addr, section: nil )
+		addr.downcase!
+		file = self.subscription_dir( section ) + self.hashchar( addr )
+		return false unless file.exist?
+		return file.read.scan( /T([^\0]+)\0/ ).flatten.include?( addr )
 	end
+	alias_method :is_subscriber?, :include?
 
 
 	### Fetch a sorted Array of the email addresses for all of the list's
@@ -90,38 +93,6 @@ class Ezmlm::List
 	###
 	def subscribers
 		return self.read_subscriber_dir
-	end
-
-
-	### Returns an Array of email addresses of people responsible for
-	### moderating subscription of a closed list.
-	###
-	def moderators
-		return self.read_subscriber_dir( 'mod' )
-	end
-
-
-	### Subscribe +addr+ to the list as a Moderator.
-	###
-	def add_moderator( *addr )
-		return self.subscribe( *addr, section: 'mod' )
-	end
-
-
-	### Remove +addr+ from the list as a Moderator.
-	###
-	def remove_moderator( *addr )
-		return self.unsubscribe( *addr, section: 'mod' )
-	end
-
-
-	### Returns +true+ if +address+ is a subscriber to this list.
-	###
-	def include?( addr )
-		addr.downcase!
-		file = self.subscription_dir + self.hashchar( addr )
-		return false unless file.exist?
-		return file.read.scan( /T([^\0]+)\0/ ).flatten.include?( addr )
 	end
 
 
@@ -149,6 +120,7 @@ class Ezmlm::List
 			end
 		end
 	end
+	alias_method :add_subscriber, :subscribe
 
 
 	### Unsubscribe +addr+ from the list within +section+.
@@ -157,7 +129,7 @@ class Ezmlm::List
 		addr.each do |address|
 			address.downcase!
 
-			file = self.subscribers_dir( section ) + self.hashchar( address )
+			file = self.subscription_dir( section ) + self.hashchar( address )
 			self.with_safety do
 				next unless file.exist?
 				addresses = file.read.scan( /T([^\0]+)\0/ ).flatten
@@ -173,65 +145,513 @@ class Ezmlm::List
 			end
 		end
 	end
+	alias_method :remove_subscriber, :unsubscribe
 
 
-=begin
-	### Return the Date parsed from the last post to the list.
+	### Returns an Array of email addresses of people responsible for
+	### moderating subscription of a closed list.
 	###
-	def last_message_date
-		mail = self.last_post or return nil
-		return mail.date
+	def moderators
+		return self.read_subscriber_dir( 'mod' )
+	end
+
+	### Returns +true+ if +address+ is a moderator.
+	###
+	def is_moderator?( addr )
+		return self.include?( addr, section: 'mod' )
+	end
+
+	### Subscribe +addr+ to the list as a Moderator.
+	###
+	def add_moderator( *addr )
+		return self.subscribe( *addr, section: 'mod' )
+	end
+
+	### Remove +addr+ from the list as a Moderator.
+	###
+	def remove_moderator( *addr )
+		return self.unsubscribe( *addr, section: 'mod' )
 	end
 
 
-	### Return the author of the last post to the list.
+	### Returns an Array of email addresses denied access
+	### to the list.
 	###
-	def last_message_author
-		mail = self.last_post or return nil
-		return mail.from
+	def blacklisted
+		return self.read_subscriber_dir( 'deny' )
+	end
+
+	### Returns +true+ if +address+ is disallowed from participating.
+	###
+	def is_blacklisted?( addr )
+		return self.include?( addr, section: 'deny' )
+	end
+
+	### Blacklist +addr+ from the list.
+	###
+	def add_blacklisted( *addr )
+		return self.subscribe( *addr, section: 'deny' )
+	end
+
+	### Remove +addr+ from the blacklist.
+	###
+	def remove_blacklisted( *addr )
+		return self.unsubscribe( *addr, section: 'deny' )
 	end
 
 
-	### Returns +true+ if subscription to the list is moderated.
+
+	### Returns an Array of email addresses that act like
+	### regular subscribers for user-post only lists.
 	###
-	def closed?
-		return (self.listdir + 'modsub').exist? || (self.listdir + 'remote').exist?
+	def allowed
+		return self.read_subscriber_dir( 'allow' )
+	end
+
+	### Returns +true+ if +address+ is given the same benefits as a
+	### regular subscriber for user-post only lists.
+	###
+	def is_allowed?( addr )
+		return self.include?( addr, section: 'allow' )
+	end
+
+	### Add +addr+ to allow posting to user-post only lists,
+	### when +addr+ isn't a subscriber.
+	###
+	def add_allowed( *addr )
+		return self.subscribe( *addr, section: 'allow' )
+	end
+
+	### Remove +addr+ from the allowed list.
+	###
+	def remove_allowed( *addr )
+		return self.unsubscribe( *addr, section: 'allow' )
 	end
 
 
-	### Returns +true+ if posting to the list is moderated.
+	### Returns +true+ if message threading is enabled.
+	###
+	def threaded?
+		return ( self.listdir + 'threaded' ).exist?
+	end
+
+	### Disable or enable message threading.
+	###
+	### This automatically builds message indexes and thread
+	### information on an incoming message.
+	###
+	def threaded=( enable=true )
+		if enable
+			self.touch( 'threaded' )
+		else
+			self.unlink( 'threaded' )
+		end
+	end
+
+
+	### Returns +true+ if the list is configured to respond
+	### to remote mangement requests.
+	###
+	def public?
+		return ( self.listdir + 'public' ).exist?
+	end
+
+	### Disable or enable remote management requests.
+	###
+	def public=( enable=true )
+		if enable
+			self.touch( 'public' )
+		else
+			self.unlink( 'public' )
+		end
+	end
+
+	### Returns +true+ if the list is not configured to respond
+	### to remote mangement requests.
+	###
+	def private?
+		return ! self.public?
+	end
+
+	### Disable or enable remote management requests.
+	###
+	def private=( enable=false )
+		self.public = ! enable
+	end
+
+
+	### Returns +true+ if the list supports remote administration
+	### subscribe/unsubscribe requests from moderators.
+	###
+	def remote_subscriptions?
+		return ( self.listdir + 'remote' ).exist?
+	end
+
+	### Disable or enable remote subscription requests.
+	###
+	def remote_subscriptions=( enable=false )
+		if enable
+			self.touch( 'remote' )
+		else
+			self.unlink( 'remote' )
+		end
+	end
+
+
+	### Returns +true+ if list subscription requests require moderator
+	### approval.
+	###
+	def moderated_subscriptions?
+		return ( self.listdir + 'modsub' ).exist?
+	end
+
+	### Disable or enable subscription moderation.
+	###
+	def moderated_subscriptions=( enable=false )
+		if enable
+			self.touch( 'modsub' )
+		else
+			self.unlink( 'modsub' )
+		end
+	end
+
+
+	### Returns +true+ if message moderation is enabled.
 	###
 	def moderated?
-		return (self.listdir + 'modpost').exist?
+		return ( self.listdir + 'modpost' ).exist?
+	end
+
+	### Disable or enable message moderation.
+	###
+	### This has special meaning when combined with user_post_only setting.
+	### Lists act as unmoderated for subscribers, and posts from unknown
+	### addresses go to moderation.
+	###
+	def moderated=( enable=false )
+		if enable
+			self.touch( 'modpost' )
+			self.touch( 'noreturnposts' ) if self.user_posts_only?
+		else
+			self.unlink( 'modpost' )
+			self.unlink( 'noreturnposts' ) if self.user_posts_only?
+		end
 	end
 
 
-	### Return a Mail::Message object loaded from the last post to the list. Returns
-	### +nil+ if there are no archived posts.
+	### Returns +true+ if posting is only allowed by moderators.
+	###
+	def moderator_posts_only?
+		return ( self.listdir + 'modpostonly' ).exist?
+	end
+
+	### Disable or enable moderation only posts.
+	###
+	def moderator_posts_only=( enable=false )
+		if enable
+			self.touch( 'modpostonly' )
+		else
+			self.unlink( 'modpostonly' )
+		end
+	end
+
+
+	### Returns +true+ if posting is only allowed by subscribers.
+	###
+	def user_posts_only?
+		return ( self.listdir + 'subpostonly' ).exist?
+	end
+
+	### Disable or enable user only posts.
+	### This is easily defeated, moderated lists are preferred.
+	###
+	### This has special meaning for moderated lists.  Lists act as
+	### unmoderated for subscribers, and posts from unknown addresses
+	### go to moderation.
+	###
+	def user_posts_only=( enable=false )
+		if enable
+			self.touch( 'subpostonly' )
+			self.touch( 'noreturnposts' )if self.moderated?
+		else
+			self.unlink( 'subpostonly' )
+			self.unlink( 'noreturnposts' ) if self.moderated?
+		end
+	end
+
+
+
+	### Returns +true+ if message archival is enabled.
+	###
+	def archived?
+		return ( self.listdir + 'archived' ).exist? || ( self.listdir + 'indexed' ).exist?
+	end
+
+	### Disable or enable message archiving (and indexing.)
+	###
+	def archive=( enable=true )
+		if enable
+			self.touch( 'archived' )
+			self.touch( 'indexed' )
+		else
+			self.unlink( 'archived' )
+			self.unlink( 'indexed' )
+		end
+	end
+
+	### Returns +true+ if the message archive is accessible only to
+	### moderators.
+	###
+	def private_archive?
+		return ( self.listdir + 'modgetonly' ).exist?
+	end
+
+	### Disable or enable private access to the archive.
+	###
+	def private_archive=( enable=true )
+		if enable
+			self.touch( 'modgetonly' )
+		else
+			self.unlink( 'modgetonly' )
+		end
+	end
+
+	### Returns +true+ if the message archive is accessible to anyone.
+	###
+	def public_archive?
+		return ! self.private_archive?
+	end
+
+	### Returns +true+ if the message archive is accessible only to
+	### list subscribers.
+	###
+	def guarded_archive?
+		return ( self.listdir + 'subgetonly' ).exist?
+	end
+
+	### Disable or enable loimited access to the archive.
+	###
+	def guarded_archive=( enable=true )
+		if enable
+			self.touch( 'subgetonly' )
+		else
+			self.unlink( 'subgetonly' )
+		end
+	end
+
+
+	### Returns +true+ if message digests are enabled.
+	###
+	def digested?
+		return ( self.listdir + 'digested' ).exist?
+	end
+
+	### Disable or enable message digesting.
+	###
+	def digest=( enable=true )
+		if enable
+			self.touch( 'digested' )
+		else
+			self.unlink( 'digested' )
+		end
+	end
+
+	### If the list is digestable, trigger the digest after this amount
+	### of message body since the latest digest, in kbytes.
+	###
+	### See: ezmlm-tstdig(1)
+	###
+	def digest_kbytesize
+		size = self.read( 'digsize' ).to_i
+		return size.zero? ? 64 : size
+	end
+
+	### If the list is digestable, trigger the digest after this amount
+	### of message body since the latest digest, in kbytes.
+	###
+	### See: ezmlm-tstdig(1)
+	###
+	def digest_kbytesize=( size=64 )
+		self.write( 'digsize' ) {|f| f.puts size.to_i }
+	end
+
+	### If the list is digestable, trigger the digest after this many
+	### messages have accumulated since the latest digest.
+	###
+	### See: ezmlm-tstdig(1)
+	###
+	def digest_count
+		count = self.read( 'digcount' ).to_i
+		return count.zero? ? 30 : count
+	end
+
+	### If the list is digestable, trigger the digest after this many
+	### messages have accumulated since the latest digest.
+	###
+	### See: ezmlm-tstdig(1)
+	###
+	def digest_count=( count=30 )
+		self.write( 'digcount' ) {|f| f.puts count.to_i }
+	end
+
+	### If the list is digestable, trigger the digest after this much
+	### time has passed since the last digest, in hours.
+	###
+	### See: ezmlm-tstdig(1)
+	###
+	def digest_timeout
+		hours = self.read( 'digtime' ).to_i
+		return hours.zero? ? 48 : hours
+	end
+
+	### If the list is digestable, trigger the digest after this much
+	### time has passed since the last digest, in hours.
+	###
+	### See: ezmlm-tstdig(1)
+	###
+	def digest_timeout=( hours=48 )
+		self.write( 'digtime' ) {|f| f.puts hours.to_i }
+	end
+
+
+	### Returns +true+ if the list requires subscriptions to be
+	### confirmed.  AKA "help" mode if disabled.
+	###
+	def confirm_subscriptions?
+		return ! ( self.listdir + 'nosubconfirm' ).exist?
+	end
+
+	### Disable or enable subscription confirmation.
+	### AKA "help" mode if disabled.
+	###
+	def confirm_subscriptions=( enable=true )
+		if enable
+			self.unlink( 'nosubconfirm' )
+		else
+			self.touch( 'nosubconfirm' )
+		end
+	end
+
+	### Returns +true+ if the list requires unsubscriptions to be
+	### confirmed.  AKA "jump" mode.
+	###
+	def confirm_unsubscriptions?
+		return ! ( self.listdir + 'nounsubconfirm' ).exist?
+	end
+
+	### Disable or enable unsubscription confirmation.
+	### AKA "jump" mode.
+	###
+	def confirm_unsubscriptions=( enable=true )
+		if enable
+			self.unlink( 'nounsubconfirm' )
+		else
+			self.touch( 'nounsubconfirm' )
+		end
+	end
+
+
+	### Returns +true+ if the list requires regular message postings
+	### to be confirmed by the original sender.
+	###
+	def confirm_postings?
+		return ( self.listdir + 'confirmpost' ).exist?
+	end
+
+	### Disable or enable message confirmation.
+	###
+	def confirm_postings=( enable=false )
+		if enable
+			self.touch( 'confirmpost' )
+		else
+			self.unlink( 'confirmpost' )
+		end
+	end
+
+
+	### Returns +true+ if the list allows moderators to
+	### fetch a subscriber list remotely.
+	###
+	def allow_remote_listing?
+		return ( self.listdir + 'modcanlist' ).exist?
+	end
+
+	### Disable or enable the ability for moderators to
+	### remotely fetch a subscriber list.
+	###
+	def allow_remote_listing=( enable=false )
+		if enable
+			self.touch( 'modcanlist' )
+		else
+			self.unlink( 'modcanlist' )
+		end
+	end
+
+
+	### Returns +true+ if the list automatically manages
+	### bouncing subscriber addresses.
+	###
+	def bounce_warnings?
+		return ! ( self.listdir + 'nowarn' ).exist?
+	end
+
+	### Disable or enable automatic bounce probes and warnings.
+	###
+	def bounce_warnings=( enable=true )
+		if enable
+			self.unlink( 'nowarn' )
+		else
+			self.touch( 'nowarn' )
+		end
+	end
+
+
+	### Return the maximum message size, in bytes.  Messages larger than
+	### this size will be rejected.
+	###
+	### See: ezmlm-reject(1)
+	###
+	def maximum_message_size
+		size = self.read( 'msgsize' )
+		return size ? size.split( ':' ).first.to_i : 0
+	end
+
+	### Set the maximum message size, in bytes.  Messages larger than
+	### this size will be rejected.
+	###
+	### See: ezmlm-reject(1)
+	###
+	def maximum_message_size=( size=307200 )
+		if size.to_i.zero?
+			self.unlink( 'msgsize' )
+		else
+			self.write( 'msgsize' ) {|f| f.puts "#{size.to_i}:0" }
+		end
+	end
+
+
+	### Return the number of messages in the list archive.
+	###
+	def message_count
+		count = self.read( 'archnum' )
+		return count ? Integer( count ) : 0
+	end
+
+	### Returns the last message to the list as a Mail::Message, if
+	### archiving was enabled.
 	###
 	def last_post
-		archivedir = self.listdir + 'archive'
-		return nil unless archivedir.exist?
+		num = self.message_count
+		return if num.zero?
 
-		# Find the last numbered directory under the archive dir
-		last_archdir = Pathname.glob( archivedir + '[0-9]*' ).
-			sort_by {|pn| Integer(pn.basename.to_s) }.last
+		hashdir = num / 100
+		message = "%02d" % [ num % 100 ]
 
-		return nil unless last_archdir
+		post = self.listdir + 'archive' + hashdir.to_s + message.to_s
+		return unless post.exist?
 
-		# Find the last numbered file under the last numbered directory we found
-		# above.
-		last_post_path = Pathname.glob( last_archdir + '[0-9]*' ).
-			sort_by {|pn| pn.basename.to_s }.last
-
-		raise RuntimeError, "unexpectedly empty archive directory '%s'" % [ last_archdir ] \
-			unless last_post_path
-
-				require 'pry'
-				binding.pry
-		last_post = TMail::Mail.load( last_post_path.to_s )
+		return Mail.read( post.to_s )
 	end
-=end
 
 
 	#########
@@ -244,7 +664,7 @@ class Ezmlm::List
 	### Older ezmlm didn't lowercase addresses, anything within the last
 	### decade did.  We're not going to worry about compatibility there.
 	###
-	### (See subhash.c in the ezmlm source.)
+	### See: subhash.c in the ezmlm source.
 	###
 	def subhash( addr )
 		h = 5381
@@ -277,12 +697,51 @@ class Ezmlm::List
 	end
 
 
+	### Overwrite +file+ safely, yielding the open filehandle to the
+	### block.  Set the new file to correct ownership and permissions.
+	###
+	def write( file, &block )
+		file = self.listdir + file unless file.is_a?( Pathname )
+		self.with_safety do
+			file.open( 'w' ) do |f|
+				yield( f )
+			end
+
+			stat = self.listdir.stat
+			file.chown( stat.uid, stat.gid )
+			file.chmod( 0600 )
+		end
+	end
+
+
+	### Simply create an empty file, safely.
+	###
+	def touch( file )
+		self.write( file ) {}
+	end
+
+
+	### Delete +file+ safely.
+	###
+	def unlink( file )
+		file = self.listdir + file unless file.is_a?( Pathname )
+		return unless file.exist?
+		self.with_safety do
+			file.unlink
+		end
+	end
+
+
 	### Return a Pathname to a subscription directory.
 	###
 	def subscription_dir( section=nil )
-		section = nil if section && ! SUBSCRIPTION_DIRS.include?( section )
-
 		if section
+			unless SUBSCRIPTION_DIRS.include?( section )
+				raise "Invalid subscription dir: %s, must be one of: %s" % [
+					section,
+					SUBSCRIPTION_DIRS.join( ', ' )
+				]
+			end
 			return self.listdir + section + 'subscribers'
 		else
 			return self.listdir + 'subscribers'
@@ -290,8 +749,8 @@ class Ezmlm::List
 	end
 
 
-	### Read the hashed subscriber email addresses from the specified +directory+ and return them in
-	### an Array.
+	### Read the hashed subscriber email addresses from the specified
+	### +directory+ and return them in an Array.
 	###
 	def read_subscriber_dir( section=nil )
 		directory = self.subscription_dir( section )

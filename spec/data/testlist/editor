@@ -1,0 +1,10 @@
+|if test ! -f '/tmp/woo/test/sublist'; then /usr/local/bin/ezmlm-reject '/tmp/woo/test'; fi
+|if test ! -f '/tmp/woo/test/sublist'; then /usr/local/bin/ezmlm-checksub -n '/tmp/woo/test' deny; fi
+|if test ! -f '/tmp/woo/test/subpostonly'; then /usr/local/bin/ezmlm-store '/tmp/woo/test'; fi
+|if test -f '/tmp/woo/test/subpostonly' -a ! -f '/tmp/woo/test/modpost'; then /usr/local/bin/ezmlm-checksub '/tmp/woo/test' . digest allow mod && /usr/local/bin/ezmlm-store '/tmp/woo/test'; fi
+|if test -f '/tmp/woo/test/subpostonly' -a -f '/tmp/woo/test/modpost' -a ! -f '/tmp/woo/test/confirmpost'; then /usr/local/bin/ezmlm-gate '/tmp/woo/test' . digest allow mod; fi
+|if test -f '/tmp/woo/test/subpostonly' -a -f '/tmp/woo/test/modpost' -a -f '/tmp/woo/test/confirmpost'; then /usr/local/bin/ezmlm-store '/tmp/woo/test'; fi
+|/usr/local/bin/ezmlm-clean '/tmp/woo/test' || exit 0
+|if test -f '/tmp/woo/test/threaded'; then /usr/local/bin/ezmlm-archive '/tmp/woo/test' || exit 0; fi
+|/usr/local/bin/ezmlm-warn '/tmp/woo/test' || exit 0
+|if test -e '/tmp/woo/test/digested' && /usr/local/bin/ezmlm-tstdig '/tmp/woo/test'; then /usr/local/bin/ezmlm-get '/tmp/woo/test' || exit 0; fi

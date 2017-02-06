@@ -23,10 +23,13 @@ describe Ezmlm do
 		existant_mlentry = double( "mailinglist path that does exist", :exist? => true )
 		ml_dir_entry = double( "directory with a mailinglist file", :directory? => true, :+ => existant_mlentry )
 
+		sorted_dirs = double( "sorted dirs" )
 		expect( Pathname ).to receive( :glob ).with( an_instance_of(Pathname) ).
+			and_return( sorted_dirs )
+		expect( sorted_dirs ).to receive( :sort ).
 			and_return([ file_entry, nonml_dir_entry, ml_dir_entry ])
 
-		dirs = Ezmlm.find_directories( TEST_LISTSDIR )
+		dirs = Ezmlm.find_directories( '/tmp' )
 
 		expect( dirs.size ).to eq( 1 )
 		expect( dirs ).to include( ml_dir_entry )
@@ -34,13 +37,13 @@ describe Ezmlm do
 
 
 	it "can iterate over all mailing lists in a specified directory" do
-		expect( Ezmlm ).to receive( :find_directories ).with( TEST_LISTSDIR ).and_return([ :listdir1, :listdir2 ])
+		expect( Ezmlm ).to receive( :find_directories ).with( '/tmp' ).and_return([ :listdir1, :listdir2 ])
 
 		expect( Ezmlm::List ).to receive( :new ).with( :listdir1 ).and_return( :listobject1 )
 		expect( Ezmlm::List ).to receive( :new ).with( :listdir2 ).and_return( :listobject2 )
 
 		lists = []
-		Ezmlm.each_list( TEST_LISTSDIR ) do |list|
+		Ezmlm.each_list( '/tmp' ) do |list|
 			lists << list
 		end
 

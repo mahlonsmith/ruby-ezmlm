@@ -1,0 +1,7 @@
+|/usr/local/bin/ezmlm-weed
+|/usr/local/bin/ezmlm-get '/tmp/woo/test'
+|/usr/local/bin/ezmlm-split '/tmp/woo/test'
+|/usr/local/bin/ezmlm-request '/tmp/woo/test'
+|/usr/local/bin/ezmlm-manage '/tmp/woo/test'
+|/usr/local/bin/ezmlm-clean '/tmp/woo/test' || exit 0
+|/usr/local/bin/ezmlm-warn '/tmp/woo/test' || exit 0

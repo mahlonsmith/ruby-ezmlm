@@ -1,0 +1,11 @@
+return-path
+return-receipt-to
+content-length
+precedence
+x-confirm-reading-to
+x-pmrqc
+list-subscribe
+list-unsubscribe
+list-help
+list-post
+sender
