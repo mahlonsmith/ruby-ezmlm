@@ -8,7 +8,7 @@ code
 
 * Mahlon E. Smith <mahlon@martini.nu>
 * Michael Granger <ged@faeriemud.org>
-* Jeremiah Jordan <jjordan@laika.com>
+* Jeremiah Jordan <jeremiah.m.jordan@gmail.com>
 
 
 ## Description
@@ -22,6 +22,11 @@ http://untroubled.org/ezmlm/
 
 This was tested against ezmlm-idx 7.2.2.
 
+*Strong recommendation*: Create your lists with archiving (-a) and
+indexing (-i)!   This library is suitable for modifying behavior of
+existing lists as a default, but with these flags enabled, can also
+be an interface to parsing and browsing the content of lists.
+
 
 ## Prerequisites
 
@@ -31,6 +36,10 @@ This was tested against ezmlm-idx 7.2.2.
 ## Installation
 
     $ gem install ezmlm
+
+## Usage
+
+	....
 
 
 ## TODO
@@ -52,10 +61,10 @@ machine with a matching address space as the list itself.  (Running this
 on a 64bit machine to talk to 32bit listserv isn't going to play well.)
 
 A lot of the fine tuning niceties of ezmlm come as flag options to
-the various ezmlm-* binaries.  This library largely just deals with
+the various ezmlm binaries.  This library largely just deals with
 ezmlm-make flags for global list behaviors.  (For example, see the man
 page for ezmlm-reject.)  Patches are welcome if you'd like these sorts
-of miscellanous things included.
+of miscellaneous things included.
 
 
 ## License

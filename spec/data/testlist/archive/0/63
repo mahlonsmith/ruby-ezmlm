@@ -1,0 +1,16 @@
+Return-Path: <neva.senger@example.net>
+Delivered-To: mailing list testlist@lists.laika.com
+Received: (qmail 7591 invoked by uid 0); 7 May 2017 21:55:22 -0000
+Date: Sun, 07 May 2017 14:55:22 -0700
+From: Troy Rempel <neva.senger@example.net>
+To: testlist@lists.laika.com
+Message-ID: <590f97cad45b4_1c9d4016b45041348@lists.laika.com.mail>
+In-Reply-To: <590f97b960503_178a4016b450418232@lists.laika.com.mail>
+References: <590f97b960503_178a4016b450418232@lists.laika.com.mail>
+Subject: Re: Overriding TCP on the sensor.
+Mime-Version: 1.0
+Content-Type: text/plain;
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+I'll compress the mobile HTTP application, that should array the PCI feed!

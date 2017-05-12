@@ -1,0 +1,16 @@
+Return-Path: <westley@example.com>
+Delivered-To: mailing list testlist@lists.laika.com
+Received: (qmail 9016 invoked by uid 0); 7 May 2017 21:55:24 -0000
+Date: Sun, 07 May 2017 14:55:24 -0700
+From: Kaya Stroman <westley@example.com>
+To: testlist@lists.laika.com
+Message-ID: <590f97cc68be1_1c9d4016b45047211@lists.laika.com.mail>
+In-Reply-To: <590f97b9d46ff_178a4016b45042058f@lists.laika.com.mail>
+References: <590f97b9d46ff_178a4016b45042058f@lists.laika.com.mail>
+Subject: Re: Bypassing SCSI on the interface?????
+Mime-Version: 1.0
+Content-Type: text/plain;
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+Overriding the microchip won't do anything, we need to navigate the virtual http transmitter!

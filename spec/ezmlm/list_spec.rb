@@ -1,14 +1,6 @@
-#!/usr/bin/env ruby
-
-BEGIN {
-	require 'pathname'
-	basedir = Pathname.new( __FILE__ ).dirname.parent.parent
-	libdir = basedir + "lib"
-	$LOAD_PATH.unshift( libdir ) unless $LOAD_PATH.include?( libdir )
-}
+# vim: set nosta noet ts=4 sw=4 ft=rspec:
 
 require_relative '../spec_helpers'
-require 'ezmlm'
 
 describe Ezmlm::List do
 
@@ -25,15 +17,15 @@ describe Ezmlm::List do
 	end
 
 
-	it "can return the list name" do
+	it "returns the list name" do
 		expect( list.name ).to eq( TEST_LIST_NAME )
 	end
 
-	it "can return the list host" do
+	it "returns the list host" do
 		expect( list.host ).to eq( TEST_LIST_HOST )
 	end
 
-	it "can return the list address" do
+	it "returns the list address" do
 		expect( list.address ).to eq( TEST_LIST_NAME + '@' + TEST_LIST_HOST )
 	end
 
@@ -41,7 +33,7 @@ describe Ezmlm::List do
 		expect( list.owner ).to eq( nil )
 	end
 
-	it "can return an email address owner" do
+	it "returns an email address owner" do
 		expect( list ).to receive( :read ).with( 'owner' ).and_return( TEST_OWNER )
 		expect( list.owner ).to eq( TEST_OWNER )
 	end
@@ -52,7 +44,7 @@ describe Ezmlm::List do
 		expect( list.is_subscriber?( TEST_SUBSCRIBERS.first ) ).to be_truthy
 	end
 
-	it "can return the list of subscibers" do
+	it "returns the list of subscibers" do
 		list.add_subscriber( *TEST_SUBSCRIBERS )
 		list.add_subscriber( 'notanemailaddress' )
 		expect( list.subscribers.length ).to eq( 3 )
@@ -72,7 +64,7 @@ describe Ezmlm::List do
 		expect( list.is_moderator?( TEST_MODERATORS.first ) ).to be_truthy
 	end
 
-	it "can return the list of moderators" do
+	it "returns the list of moderators" do
 		list.add_moderator( *TEST_MODERATORS )
 		expect( list.moderators.length ).to eq( 1 )
 		expect( list.moderators ).to include( TEST_MODERATORS.first )
@@ -90,7 +82,7 @@ describe Ezmlm::List do
 		expect( list.is_blacklisted?( TEST_MODERATORS.first ) ).to be_truthy
 	end
 
-	it "can return the list of blacklisted addresses" do
+	it "returns the list of blacklisted addresses" do
 		list.add_blacklisted( *TEST_MODERATORS )
 		expect( list.blacklisted.length ).to eq( 1 )
 		expect( list.blacklisted ).to include( TEST_MODERATORS.first )
@@ -108,7 +100,7 @@ describe Ezmlm::List do
 		expect( list.is_allowed?( TEST_MODERATORS.first ) ).to be_truthy
 	end
 
-	it "can return the list of allowed addresses" do
+	it "returns the list of allowed addresses" do
 		list.add_allowed( *TEST_MODERATORS )
 		expect( list.allowed.length ).to eq( 1 )
 		expect( list.allowed ).to include( TEST_MODERATORS.first )
@@ -121,17 +113,17 @@ describe Ezmlm::List do
 	end
 
 
-	it 'can return the current threading state' do
-		expect( list.threaded? ).to be_falsey
-	end
-
-	it 'can set the threading state' do
-		list.threaded = true
+	it 'returns the current threading state' do
 		expect( list.threaded? ).to be_truthy
 	end
 
+	it 'can set the threading state' do
+		list.threaded = false
+		expect( list.threaded? ).to be_falsey
+	end
 
-	it 'can return the current public/private state' do
+
+	it 'returns the current public/private state' do
 		expect( list.public? ).to be_truthy
 		expect( list.private? ).to be_falsey
 	end
@@ -323,23 +315,65 @@ describe Ezmlm::List do
 	end
 
 
-	it 'can return the message count for a pristine list' do
+	it 'can return the total message count for a pristine list' do
+		expect( list ).to receive( :read ).with( 'archnum' ).and_return( nil )
 		expect( list.message_count ).to eq( 0 )
 	end
+
+	it 'can return the total message count for a list with deliveries' do
+		expect( list.message_count ).to eq( 150 )
+	end
+
+
+	it 'can generate a message number to thread index' do
+		idx = list.index
+		expect( idx.size ).to be( 150 )
+		expect( idx[39][:thread] ).to eq( 'cadgeokhhaieijmndokb' )
+	end
+
+
+	it 'fetches thread objects upon request' do
+		expect( list.thread('cadgeokhhaieijmndokb') ).to be_a( Ezmlm::List::Thread )
+	end
+
+
+	it 'fetches author objects upon request' do
+		expect( list.author('ojjhjlapnejjlbcplabi') ).to be_a( Ezmlm::List::Author )
+	end
+
+
+	context 'fetching messages' do
+		it 'raises an error if archiving is disabled' do
+			expect( list ).to receive( :archived? ).and_return( false )
+			expect {
+				list.message( 1 )
+			}.to raise_error( RuntimeError, /archiving is not enabled/i )
+		end
+
+		it 'raises an error if the message archive is empty' do
+			expect( list ).to receive( :message_count ).and_return( 0 )
+			expect {
+				list.message( 1 )
+			}.to raise_error( RuntimeError, /message archive is empty/i )
+		end
+
+		it 'returns an archived message' do
+			message = list.message( 1 )
+			expect( message.id ).to be( 1 )
+			expect( message.subject ).to match( /compress program/ )
+		end
+
+		it 'can iterate across all messages' do
+			message = nil
+			list.each_message do |m|
+				if m.id == 20
+					message = m
+					break
+				end
+			end
+			expect( message ).to_not be_nil
+			expect( message.id ).to be( 20 )
+		end
+	end
 end
-
-
-
-	# it "can fetch the body of an archived post by message id"
-	# it "can fetch the header of an archived post by message id"
-
-	# it "can return a hash of the subjects of all archived posts to message ids"
-	# it "can return an Array of the subjects of all archived posts"
-
-	# it "can return a hash of the threads of all archived posts to message ids"
-	# it "can return an Array of the threads of all archived posts"
-
-	# it "can return a hash of the authors of all archived posts to message ids"
-	# it "can return an Array of the authors of all archived posts"
-
 

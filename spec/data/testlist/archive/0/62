@@ -1,0 +1,16 @@
+Return-Path: <stevie@example.org>
+Delivered-To: mailing list testlist@lists.laika.com
+Received: (qmail 7563 invoked by uid 0); 7 May 2017 21:55:22 -0000
+Date: Sun, 07 May 2017 14:55:22 -0700
+From: Ezequiel VonRueden <stevie@example.org>
+To: testlist@lists.laika.com
+Message-ID: <590f97caccfc0_1c9d4016b45041224@lists.laika.com.mail>
+In-Reply-To: <590f97ba6c21c_178a4016b4504222e0@lists.laika.com.mail>
+References: <590f97ba6c21c_178a4016b4504222e0@lists.laika.com.mail>
+Subject: Re: Indexing bandwidth with some panel.
+Mime-Version: 1.0
+Content-Type: text/plain;
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+Connecting the card won't do anything, we need to hack the multi-byte hdd interface!

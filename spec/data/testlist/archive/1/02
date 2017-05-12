@@ -1,0 +1,16 @@
+Return-Path: <emily.larson@example.net>
+Delivered-To: mailing list testlist@lists.laika.com
+Received: (qmail 8532 invoked by uid 0); 7 May 2017 21:55:23 -0000
+Date: Sun, 07 May 2017 14:55:23 -0700
+From: Lela Lindgren <emily.larson@example.net>
+To: testlist@lists.laika.com
+Message-ID: <590f97cbd6bb3_1c9d4016b45045220@lists.laika.com.mail>
+In-Reply-To: <590f97cbebd2_1c9d4016b450420ca@lists.laika.com.mail>
+References: <590f97cbebd2_1c9d4016b450420ca@lists.laika.com.mail>
+Subject: Re: Re: Copying interface for a monitor.
+Mime-Version: 1.0
+Content-Type: text/plain;
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+Try to bypass the SCSI feed, maybe it will input the auxiliary interface!

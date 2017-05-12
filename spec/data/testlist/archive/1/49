@@ -1,0 +1,16 @@
+Return-Path: <glen@example.org>
+Delivered-To: mailing list testlist@lists.laika.com
+Received: (qmail 9659 invoked by uid 0); 7 May 2017 21:55:25 -0000
+Date: Sun, 07 May 2017 14:55:25 -0700
+From: Noel Smith <glen@example.org>
+To: testlist@lists.laika.com
+Message-ID: <590f97cd2b1aa_1c9d4016b45049991@lists.laika.com.mail>
+In-Reply-To: <590f97b9d46ff_178a4016b45042058f@lists.laika.com.mail>
+References: <590f97b9d46ff_178a4016b45042058f@lists.laika.com.mail>
+Subject: Re: Bypassing SCSI on the interface?????
+Mime-Version: 1.0
+Content-Type: text/plain;
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+Overriding the microchip won't do anything, we need to override the wireless agp program!

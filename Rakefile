@@ -31,7 +31,7 @@ spec = Gem::Specification.new do |s|
 	s.authors      = [
 		'Mahlon E. Smith <mahlon@martini.nu>',
 		'Michael Granger <ged@faeriemud.org>',
-		'Jeremiah Jordan <jjordan@laika.com>'
+		'Jeremiah Jordan <jeremiah.m.jordan@gmail.com>'
 	]
 	s.platform     = Gem::Platform::RUBY
 	s.summary      = "Interact with Ezmlm-IDX mailing lists."
@@ -52,6 +52,7 @@ environment.)
 	s.required_ruby_version = '>= 2.1'
 
 	s.add_dependency 'mail', "~> 2.6"
+	s.add_dependency 'rake-compiler', "~> 1.0"
 end
 
 Gem::PackageTask.new( spec ) do |pkg|

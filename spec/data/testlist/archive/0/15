@@ -1,0 +1,14 @@
+Return-Path: <marina@example.org>
+Delivered-To: mailing list testlist@lists.laika.com
+Received: (qmail 6328 invoked by uid 0); 7 May 2017 21:55:05 -0000
+Date: Sun, 07 May 2017 14:55:05 -0700
+From: Alice Sanford <marina@example.org>
+To: testlist@lists.laika.com
+Message-ID: <590f97b98207d_178a4016b45041883b@lists.laika.com.mail>
+Subject: How do I transmit AGP for a port?
+Mime-Version: 1.0
+Content-Type: text/plain;
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+We need to reboot the back-end XML port!

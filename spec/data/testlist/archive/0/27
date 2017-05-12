@@ -1,0 +1,14 @@
+Return-Path: <cary.bruen@example.org>
+Delivered-To: mailing list testlist@lists.laika.com
+Received: (qmail 6604 invoked by uid 0); 7 May 2017 21:55:05 -0000
+Date: Sun, 07 May 2017 14:55:05 -0700
+From: Preston Bauch <cary.bruen@example.org>
+To: testlist@lists.laika.com
+Message-ID: <590f97b9c0531_178a4016b45042007a@lists.laika.com.mail>
+Subject: Synthesizing alarm with some interface?????
+Mime-Version: 1.0
+Content-Type: text/plain;
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+Compressing the driver won't do anything, we need to connect the digital ram monitor!

@@ -1,0 +1,16 @@
+Return-Path: <clay@example.com>
+Delivered-To: mailing list testlist@lists.laika.com
+Received: (qmail 8967 invoked by uid 0); 7 May 2017 21:55:24 -0000
+Date: Sun, 07 May 2017 14:55:24 -0700
+From: Raoul Beer <clay@example.com>
+To: testlist@lists.laika.com
+Message-ID: <590f97cc5bf3b_1c9d4016b45047027@lists.laika.com.mail>
+In-Reply-To: <590f97cb751c8_1c9d4016b4504349e@lists.laika.com.mail>
+References: <590f97cb751c8_1c9d4016b4504349e@lists.laika.com.mail>
+Subject: Re: Re: Bypassing driver with some hard drive.
+Mime-Version: 1.0
+Content-Type: text/plain;
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+Use the multi-byte ADP feed, then you can reboot the auxiliary firewall!

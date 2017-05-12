@@ -10,9 +10,9 @@
 #---
 
 require 'pathname'
+require 'time'
 require 'etc'
-require 'ezmlm'
-require 'mail'
+require 'ezmlm' unless defined?( Ezmlm )
 
 
 ### A Ruby interface to an ezmlm-idx mailing list directory
@@ -21,13 +21,7 @@ class Ezmlm::List
 
 	# Quick address space detection, to (hopefully)
 	# match the overflow size on this machine.
-	#
-	ADDRESS_SPACE = case [ 'i' ].pack( 'p' ).size
-					when 4
-						32
-					when 8
-						64
-					end
+	ADDRESS_SPACE = [ 'i' ].pack( 'p' ).size * 8
 
 	# Valid subdirectories/sections for subscriptions.
 	SUBSCRIPTION_DIRS = %w[ deny mod digest allow ]
@@ -247,10 +241,11 @@ class Ezmlm::List
 			self.unlink( 'threaded' )
 		end
 	end
+	alias_method :threaded, :threaded=
 
 
 	### Returns +true+ if the list is configured to respond
-	### to remote mangement requests.
+	### to remote management requests.
 	###
 	def public?
 		return ( self.listdir + 'public' ).exist?
@@ -265,9 +260,10 @@ class Ezmlm::List
 			self.unlink( 'public' )
 		end
 	end
+	alias_method :public, :public=
 
 	### Returns +true+ if the list is not configured to respond
-	### to remote mangement requests.
+	### to remote management requests.
 	###
 	def private?
 		return ! self.public?
@@ -278,6 +274,7 @@ class Ezmlm::List
 	def private=( enable=false )
 		self.public = ! enable
 	end
+	alias_method :private, :private=
 
 
 	### Returns +true+ if the list supports remote administration
@@ -296,6 +293,7 @@ class Ezmlm::List
 			self.unlink( 'remote' )
 		end
 	end
+	alias_method :remote_subscriptions, :remote_subscriptions=
 
 
 	### Returns +true+ if list subscription requests require moderator
@@ -314,7 +312,7 @@ class Ezmlm::List
 			self.unlink( 'modsub' )
 		end
 	end
-
+	alias_method :moderated_subscriptions, :moderated_subscriptions=
 
 	### Returns +true+ if message moderation is enabled.
 	###
@@ -324,7 +322,7 @@ class Ezmlm::List
 
 	### Disable or enable message moderation.
 	###
-	### This has special meaning when combined with user_post_only setting.
+	### This has special meaning when combined with user_posts_only setting.
 	### Lists act as unmoderated for subscribers, and posts from unknown
 	### addresses go to moderation.
 	###
@@ -337,6 +335,7 @@ class Ezmlm::List
 			self.unlink( 'noreturnposts' ) if self.user_posts_only?
 		end
 	end
+	alias_method :moderated, :moderated=
 
 
 	### Returns +true+ if posting is only allowed by moderators.
@@ -354,6 +353,7 @@ class Ezmlm::List
 			self.unlink( 'modpostonly' )
 		end
 	end
+	alias_method :moderator_posts_only, :moderator_posts_only=
 
 
 	### Returns +true+ if posting is only allowed by subscribers.
@@ -378,7 +378,7 @@ class Ezmlm::List
 			self.unlink( 'noreturnposts' ) if self.moderated?
 		end
 	end
-
+	alias_method :user_posts_only, :user_posts_only=
 
 
 	### Returns +true+ if message archival is enabled.
@@ -398,6 +398,7 @@ class Ezmlm::List
 			self.unlink( 'indexed' )
 		end
 	end
+	alias_method :archive, :archive=
 
 	### Returns +true+ if the message archive is accessible only to
 	### moderators.
@@ -415,12 +416,20 @@ class Ezmlm::List
 			self.unlink( 'modgetonly' )
 		end
 	end
+	alias_method :private_archive, :private_archive=
 
 	### Returns +true+ if the message archive is accessible to anyone.
 	###
 	def public_archive?
 		return ! self.private_archive?
 	end
+
+	### Disable or enable private access to the archive.
+	###
+	def public_archive=( enable=true )
+		self.private_archive = ! enable
+	end
+	alias_method :public_archive, :public_archive=
 
 	### Returns +true+ if the message archive is accessible only to
 	### list subscribers.
@@ -438,6 +447,7 @@ class Ezmlm::List
 			self.unlink( 'subgetonly' )
 		end
 	end
+	alias_method :guarded_archive, :guarded_archive=
 
 
 	### Returns +true+ if message digests are enabled.
@@ -455,6 +465,7 @@ class Ezmlm::List
 			self.unlink( 'digested' )
 		end
 	end
+	alias_method :digest, :digest=
 
 	### If the list is digestable, trigger the digest after this amount
 	### of message body since the latest digest, in kbytes.
@@ -531,6 +542,7 @@ class Ezmlm::List
 			self.touch( 'nosubconfirm' )
 		end
 	end
+	alias_method :confirm_subscriptions, :confirm_subscriptions=
 
 	### Returns +true+ if the list requires unsubscriptions to be
 	### confirmed.  AKA "jump" mode.
@@ -549,6 +561,7 @@ class Ezmlm::List
 			self.touch( 'nounsubconfirm' )
 		end
 	end
+	alias_method :confirm_unsubscriptions, :confirm_unsubscriptions=
 
 
 	### Returns +true+ if the list requires regular message postings
@@ -567,6 +580,7 @@ class Ezmlm::List
 			self.unlink( 'confirmpost' )
 		end
 	end
+	alias_method :confirm_postings, :confirm_postings=
 
 
 	### Returns +true+ if the list allows moderators to
@@ -586,6 +600,7 @@ class Ezmlm::List
 			self.unlink( 'modcanlist' )
 		end
 	end
+	alias_method :allow_remote_listing, :allow_remote_listing=
 
 
 	### Returns +true+ if the list automatically manages
@@ -604,6 +619,7 @@ class Ezmlm::List
 			self.touch( 'nowarn' )
 		end
 	end
+	alias_method :bounce_warnings, :bounce_warnings=
 
 
 	### Return the maximum message size, in bytes.  Messages larger than
@@ -617,7 +633,7 @@ class Ezmlm::List
 	end
 
 	### Set the maximum message size, in bytes.  Messages larger than
-	### this size will be rejected.
+	### this size will be rejected.  Defaults to 300kb.
 	###
 	### See: ezmlm-reject(1)
 	###
@@ -630,6 +646,7 @@ class Ezmlm::List
 	end
 
 
+
 	### Return the number of messages in the list archive.
 	###
 	def message_count
@@ -637,20 +654,74 @@ class Ezmlm::List
 		return count ? Integer( count ) : 0
 	end
 
-	### Returns the last message to the list as a Mail::Message, if
-	### archiving was enabled.
+	### Returns an individual message if archiving was enabled.
 	###
-	def last_post
-		num = self.message_count
-		return if num.zero?
+	def message( message_id )
+		raise "Archiving is not enabled." unless self.archived?
+		raise "Message archive is empty." if self.message_count.zero?
+		return Ezmlm::List::Message.new( self, message_id )
+	end
 
-		hashdir = num / 100
-		message = "%02d" % [ num % 100 ]
+	### Lazy load each message ID as a Ezmlm::List::Message,
+	### yielding it to the block.
+	###
+	def each_message
+		( 1 .. self.message_count ).each do |id|
+			yield self.message( id )
+		end
+	end
 
-		post = self.listdir + 'archive' + hashdir.to_s + message.to_s
-		return unless post.exist?
 
-		return Mail.read( post.to_s )
+	### Return a Thread object for the given +thread_id+.
+	###
+	def thread( thread_id )
+		raise "Archiving is not enabled." unless self.archived?
+		return Ezmlm::List::Thread.new( self, thread_id )
+	end
+
+
+	### Return an Author object for the given +author_id+.
+	###
+	def author( author_id )
+		raise "Archiving is not enabled." unless self.archived?
+		return Ezmlm::List::Author.new( self, author_id )
+	end
+
+
+	### Parse all thread indexes into a single array that can be used
+	### as a lookup table.
+	###
+	### These are not expanded into objects, use #message, #thread,
+	### and #author to do so.
+	###
+	def index
+		raise "Archiving is not enabled." unless self.archived?
+		archivedir = listdir + 'archive'
+
+		idx = ( 0 .. self.message_count / 100 ).each_with_object( [] ) do |dir, acc|
+			index = archivedir + dir.to_s + 'index'
+			next unless index.exist?
+
+			index.each_line.lazy.slice_before( /^\d+:/ ).each do |message|
+				match = message[0].match( /^(?<message_id>\d+): (?<thread_id>\w+)/ )
+				next unless match
+				thread_id  = match[ :thread_id ]
+
+				match = message[1].match( /^(?<date>[^;]+);(?<author_id>\w+) / )
+				next unless match
+				author_id  = match[ :author_id ]
+				date       = match[ :date ]
+
+				metadata = {
+					date:   Time.parse( date ),
+					thread: thread_id,
+					author: author_id
+				}
+				acc << metadata
+			end
+		end
+
+		return idx
 	end
 
 
@@ -670,7 +741,7 @@ class Ezmlm::List
 		h = 5381
 		over = 2 ** ADDRESS_SPACE
 
-		addr = 'T' + addr
+		addr = 'T' + addr.downcase
 		addr.each_char do |c|
 			h = ( h + ( h << 5 ) ) ^ c.ord
 			h = h % over if h > over # emulate integer overflow
@@ -679,7 +750,7 @@ class Ezmlm::List
 	end
 
 
-	### Given an email address, return the ascii character.
+	### Given an email address, return the ascii hash prefix.
 	###
 	def hashchar( addr )
 		return ( self.subhash(addr) + 64 ).chr

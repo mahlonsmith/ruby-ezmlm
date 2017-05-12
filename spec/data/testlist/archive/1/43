@@ -1,0 +1,16 @@
+Return-Path: <neva.senger@example.net>
+Delivered-To: mailing list testlist@lists.laika.com
+Received: (qmail 9523 invoked by uid 0); 7 May 2017 21:55:24 -0000
+Date: Sun, 07 May 2017 14:55:24 -0700
+From: Troy Rempel <neva.senger@example.net>
+To: testlist@lists.laika.com
+Message-ID: <590f97cce46b6_1c9d4016b4504937e@lists.laika.com.mail>
+In-Reply-To: <590f97b97114d_178a4016b450418552@lists.laika.com.mail>
+References: <590f97b97114d_178a4016b450418552@lists.laika.com.mail>
+Subject: Re: Trying to override SCSI on the microchip.
+Mime-Version: 1.0
+Content-Type: text/plain;
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+If we hack the transmitter, we can get to the COM monitor through the 1080p SCSI capacitor!

@@ -21,7 +21,13 @@ module Ezmlm
 	# Package version
 	VERSION = '0.1.0'
 
+	# Suck in the components.
+	#
 	require 'ezmlm/list'
+	require 'ezmlm/list/author'
+	require 'ezmlm/list/message'
+	require 'ezmlm/list/thread'
+
 
 	###############
 	module_function

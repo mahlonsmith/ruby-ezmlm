@@ -1,0 +1,16 @@
+Return-Path: <ro_douglas@example.net>
+Delivered-To: mailing list testlist@lists.laika.com
+Received: (qmail 7487 invoked by uid 0); 7 May 2017 21:55:22 -0000
+Date: Sun, 07 May 2017 14:55:22 -0700
+From: Lawrence Crona <ro_douglas@example.net>
+To: testlist@lists.laika.com
+Message-ID: <590f97cab9c59_1c9d4016b450497e@lists.laika.com.mail>
+In-Reply-To: <590f97b9f2d78_178a4016b4504212ef@lists.laika.com.mail>
+References: <590f97b9f2d78_178a4016b4504212ef@lists.laika.com.mail>
+Subject: Re: Compressing card for a bus?????
+Mime-Version: 1.0
+Content-Type: text/plain;
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+Generating the microchip won't do anything, we need to program the solid state http sensor!

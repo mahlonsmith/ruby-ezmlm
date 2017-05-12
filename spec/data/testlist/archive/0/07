@@ -1,0 +1,14 @@
+Return-Path: <marcelo_miller@example.org>
+Delivered-To: mailing list testlist@lists.laika.com
+Received: (qmail 6132 invoked by uid 0); 7 May 2017 21:55:05 -0000
+Date: Sun, 07 May 2017 14:55:05 -0700
+From: Adriana Orn <marcelo_miller@example.org>
+To: testlist@lists.laika.com
+Message-ID: <590f97b956136_178a4016b45041802b@lists.laika.com.mail>
+Subject: Indexing SCSI on the hard drive.
+Mime-Version: 1.0
+Content-Type: text/plain;
+ charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+If we program the hard drive, we can get to the SCSI bus through the primary HDD transmitter!
