@@ -25,7 +25,7 @@ This was tested against ezmlm-idx 7.2.2.
 *Strong recommendation*: Create your lists with archiving (-a) and
 indexing (-i)!   This library is suitable for modifying behavior of
 existing lists as a default, but with these flags enabled, can also
-be an interface to parsing and browsing the content of lists.
+be a generic interface for parsing and browsing list content.
 
 
 ## Prerequisites
@@ -65,6 +65,18 @@ the various ezmlm binaries.  This library largely just deals with
 ezmlm-make flags for global list behaviors.  (For example, see the man
 page for ezmlm-reject.)  Patches are welcome if you'd like these sorts
 of miscellaneous things included.
+
+
+## Acknowledgments
+
+Portions of this library are copied from ezmlm-idx source, authored by
+the following:
+
+ * D. J. Bernstein <djb@cr.yp.to>
+ * Bruce Guenter <bruce@untroubled.org>
+
+Many thanks for Dan and Bruce for their commitment for fine software, and
+contributions to the internet communities over the years.
 
 
 ## License

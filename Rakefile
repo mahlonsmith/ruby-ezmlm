@@ -3,6 +3,12 @@
 
 require 'pathname'
 
+begin
+	require 'rake/extensiontask'
+rescue LoadError
+	abort "This Rakefile requires rake-compiler (gem install rake-compiler)"
+end
+
 PROJECT = 'ezmlm'
 BASEDIR = Pathname.new( __FILE__ ).expand_path.dirname.relative_path_from( Pathname.getwd )
 LIBDIR  = BASEDIR + 'lib'
@@ -49,6 +55,7 @@ manager for use with the Qmail MTA, and the messages contained therein.
 (The -idx provides an extended feature set over the original ezmlm
 environment.)
 	EOF
+	s.extensions = FileList[ "ext/**/extconf.rb" ]
 	s.required_ruby_version = '>= 2.1'
 
 	s.add_dependency 'mail', "~> 2.6"
@@ -59,6 +66,9 @@ Gem::PackageTask.new( spec ) do |pkg|
 	pkg.need_zip = true
 	pkg.need_tar = true
 end
+
+# Build the C extension for hashing addresses.
+Rake::ExtensionTask.new( 'ezmlm/hash', spec )
 
 
 ########################################################################
@@ -74,7 +84,7 @@ begin
 		rdoc.rdoc_dir   = 'docs'
 		rdoc.main       = "README.rdoc"
 		# rdoc.options    = [ '-f', 'fivefish' ]
-		rdoc.rdoc_files = [ 'lib', *FileList['*.rdoc'] ]
+		rdoc.rdoc_files = [ 'lib', *FileList['ext/*/*.c'], *FileList['*.rdoc'] ]
 	end
 
 	RDoc::Task.new do |rdoc|
@@ -116,6 +126,12 @@ end
 ### M A N I F E S T
 ########################################################################
 __END__
+ext/ezmlm/hash/hash.c
+ext/ezmlm/hash/hash.h
+ext/ezmlm/hash/extconf.rb
 lib/ezmlm/list.rb
+lib/ezmlm/list/message.rb
+lib/ezmlm/list/thread.rb
+lib/ezmlm/list/author.rb
 lib/ezmlm.rb
 

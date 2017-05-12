@@ -341,6 +341,11 @@ describe Ezmlm::List do
 		expect( list.author('ojjhjlapnejjlbcplabi') ).to be_a( Ezmlm::List::Author )
 	end
 
+	it 'fetches author objects by email address' do
+		author = list.author( 'ojjhjlapnejjlbcplabi' )
+		expect( list.author('yvette@example.net').name ).to eq( author.name )
+	end
+
 
 	context 'fetching messages' do
 		it 'raises an error if archiving is disabled' do

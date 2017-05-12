@@ -19,10 +19,6 @@ require 'ezmlm' unless defined?( Ezmlm )
 ###
 class Ezmlm::List
 
-	# Quick address space detection, to (hopefully)
-	# match the overflow size on this machine.
-	ADDRESS_SPACE = [ 'i' ].pack( 'p' ).size * 8
-
 	# Valid subdirectories/sections for subscriptions.
 	SUBSCRIPTION_DIRS = %w[ deny mod digest allow ]
 
@@ -75,7 +71,7 @@ class Ezmlm::List
 	###
 	def include?( addr, section: nil )
 		addr.downcase!
-		file = self.subscription_dir( section ) + self.hashchar( addr )
+		file = self.subscription_dir( section ) + Ezmlm::Hash.subscriber( addr )
 		return false unless file.exist?
 		return file.read.scan( /T([^\0]+)\0/ ).flatten.include?( addr )
 	end
@@ -97,7 +93,7 @@ class Ezmlm::List
 			next unless address.index( '@' )
 			address.downcase!
 
-			file = self.subscription_dir( section ) + self.hashchar( address )
+			file = self.subscription_dir( section ) + Ezmlm::Hash.subscriber( address )
 			self.with_safety do
 				if file.exist?
 					addresses = file.read.scan( /T([^\0]+)\0/ ).flatten
@@ -123,7 +119,7 @@ class Ezmlm::List
 		addr.each do |address|
 			address.downcase!
 
-			file = self.subscription_dir( section ) + self.hashchar( address )
+			file = self.subscription_dir( section ) + Ezmlm::Hash.subscriber( address )
 			self.with_safety do
 				next unless file.exist?
 				addresses = file.read.scan( /T([^\0]+)\0/ ).flatten
@@ -680,10 +676,12 @@ class Ezmlm::List
 	end
 
 
-	### Return an Author object for the given +author_id+.
+	### Return an Author object for the given +author_id+, which
+	### could also be an email address.
 	###
 	def author( author_id )
 		raise "Archiving is not enabled." unless self.archived?
+		author_id = Ezmlm::Hash.address(author_id) if author_id.index( '@' )
 		return Ezmlm::List::Author.new( self, author_id )
 	end
 
@@ -728,34 +726,6 @@ class Ezmlm::List
 	#########
 	protected
 	#########
-
-	### Hash an email address, using the ezmlm algorithm for
-	### fast user lookups.  Returns the hashed integer.
-	###
-	### Older ezmlm didn't lowercase addresses, anything within the last
-	### decade did.  We're not going to worry about compatibility there.
-	###
-	### See: subhash.c in the ezmlm source.
-	###
-	def subhash( addr )
-		h = 5381
-		over = 2 ** ADDRESS_SPACE
-
-		addr = 'T' + addr.downcase
-		addr.each_char do |c|
-			h = ( h + ( h << 5 ) ) ^ c.ord
-			h = h % over if h > over # emulate integer overflow
-		end
-		return h % 53
-	end
-
-
-	### Given an email address, return the ascii hash prefix.
-	###
-	def hashchar( addr )
-		return ( self.subhash(addr) + 64 ).chr
-	end
-
 
 	### Just return the contents of the provided +file+, rooted
 	### in the list directory.

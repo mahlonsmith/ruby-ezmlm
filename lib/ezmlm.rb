@@ -23,6 +23,7 @@ module Ezmlm
 
 	# Suck in the components.
 	#
+	require 'ezmlm/hash'
 	require 'ezmlm/list'
 	require 'ezmlm/list/author'
 	require 'ezmlm/list/message'
