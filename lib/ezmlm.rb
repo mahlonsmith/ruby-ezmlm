@@ -26,7 +26,7 @@ require 'pathname'
 module Ezmlm
 
 	# Package version
-	VERSION = '0.1.0'
+	VERSION = '1.0.0'
 
 	# Suck in the components.
 	#
