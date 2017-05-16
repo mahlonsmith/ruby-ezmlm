@@ -34,7 +34,7 @@ require 'rubygems'
 require 'rubygems/package_task'
 spec = Gem::Specification.new do |s|
 	s.email        = 'mahlon@martini.nu'
-	s.homepage     = 'https://bitbucket.org/mahlon/Ruby-Ezmlm'
+	s.homepage     = 'https://bitbucket.org/mahlon/ruby-ezmlm'
 	s.authors      = [ 'Mahlon E. Smith', 'Michael Granger', 'Jeremiah Jordan' ]
 	s.platform     = Gem::Platform::RUBY
 	s.summary      = "Interact with Ezmlm-IDX mailing lists."
