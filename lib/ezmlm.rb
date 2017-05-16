@@ -1,5 +1,6 @@
 # vim: set nosta noet ts=4 sw=4:
 
+require 'pathname'
 
 # A Ruby interface to the ezmlm-idx mailing list system.
 #
@@ -9,24 +10,11 @@
 #       puts "\"%s\" <%s>" % [ list.name, list.address ]
 #   end
 #
-#
-# == Version
-#
-#  $Id$
-#
-#---
-#
-# Please see the file LICENSE in the base directory for licensing details.
-#
-
-require 'pathname'
-
-
-### Toplevel namespace module
 module Ezmlm
+	# $Id$
 
 	# Package version
-	VERSION = '1.0.0'
+	VERSION = '1.0.1'
 
 	# Suck in the components.
 	#

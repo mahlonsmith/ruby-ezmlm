@@ -2,26 +2,19 @@
 # vim: set nosta noet ts=4 sw=4:
 
 
-# A Ruby interface to a single Ezmlm-idx mailing list directory.
-#
-#    list = Ezmlm::List.new( '/path/to/listdir' )
-#
-#
-# == Version
-#
-#  $Id$
-#
-#---
-
 require 'pathname'
 require 'time'
 require 'etc'
 require 'ezmlm' unless defined?( Ezmlm )
 
 
-### A Ruby interface to an ezmlm-idx mailing list directory
-###
+# A Ruby interface to a single Ezmlm-idx mailing list directory.
+#
+#    list = Ezmlm::List.new( '/path/to/listdir' )
+#
+#---
 class Ezmlm::List
+	#  $Id$
 
 	# Valid subdirectories/sections for subscriptions.
 	SUBSCRIPTION_DIRS = %w[ deny mod digest allow ]

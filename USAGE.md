@@ -10,14 +10,14 @@ Examples
 --------
 
 
-*Print the list address for all lists in a directory*:
+### Print the list address for all lists in a directory:
 
 	Ezmlm.each_list( '/lists' ) do |list|
 		puts list.address
 	end
 
 
-*Check if I'm subscribed to a list, and if so, unsubscribe*:
+### Check if I'm subscribed to a list, and if so, unsubscribe:
 
 (You don't really have to check first, subscribe and unsubscribe are
 idempotent.)
@@ -31,14 +31,14 @@ idempotent.)
 	puts "The list now has %d subscribers!" % [ list.subscribers.size ]
 
 
-*Iterate over the subscriber list*:
+### Iterate over the subscriber list:
 
 	list.subscribers.each do |subscriber|
 		# ...
 	end
 
 
-*Make the list moderated, and add a moderator*:
+### Make the list moderated, and add a moderator:
 
 	list.moderated = true
 	list.add_moderator( 'mahlon@martini.nu' )
@@ -48,7 +48,7 @@ All other list behavior tunables operate in a similar fashion, see RDoc
 for details.
 
 
-*Archiving!*
+### Archiving!
 
 All of the archival pieces take advantage of Ezmlm-IDX extensions.
 If you want to use these features, you'll want to enable archiving
@@ -67,12 +67,12 @@ rebuild the necessary files - afterwards, they are kept up to date
 automatically.
 
 
-*How many messages are in the archive?*:
+### How many messages are in the archive?:
 
 	list.message_count #=> 123
 
 
-*Fetch message number 100 from the archive*:
+### Fetch message number 100 from the archive:
 
 	message = list.message( 100 ) or abort "No such message."
 
@@ -96,7 +96,7 @@ Mikel Lindsaar (https://github.com/mikel/mail).  See its documentation
 for specifics.
 
 
-*Iterate over messages in a specific thread*:
+### Iterate over messages in a specific thread:
 
 Messages know what thread they belong to.  Once you have a thread object
 from a message, it is an enumerable.  Iterate or sort on it using
@@ -110,7 +110,7 @@ Threads are also aware of who participated in the conversation, via the
 'authors' and 'each_author' methods.
 
 
-*Iterate over messages from a specific author:*
+### Iterate over messages from a specific author:
 
 Messages know who authored them.  Once you have an author object from a
 message, it is an enumerable.  Iterate or sort on it using standard Ruby

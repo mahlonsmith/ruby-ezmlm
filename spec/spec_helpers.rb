@@ -3,6 +3,7 @@
 require 'simplecov' if ENV['COVERAGE']
 require 'rspec'
 require 'fileutils'
+require 'tmpdir'
 
 require_relative '../lib/ezmlm'
 
@@ -30,7 +31,8 @@ module SpecHelpers
 	### Create a copy of a fresh listdir into /tmp.
 	###
 	def make_listdir
-		dirname = "/tmp/%s.%d.%0.4f" % [
+		dirname = "%s/%s.%d.%0.4f" % [
+			Dir.tmpdir,
 			'ezmlm_list',
 			Process.pid,
 			(Time.now.to_f % 3600),

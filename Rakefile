@@ -23,6 +23,7 @@ $version = ( LIBDIR + "#{PROJECT}.rb" ).read.split(/\n/).
 	select{|line| line =~ /VERSION =/}.first.match(/([\d|.]+)/)[1]
 
 task :default => [ :spec, :docs, :package ]
+task :spec    => [ :compile ]
 
 
 ########################################################################
@@ -34,11 +35,7 @@ require 'rubygems/package_task'
 spec = Gem::Specification.new do |s|
 	s.email        = 'mahlon@martini.nu'
 	s.homepage     = 'https://bitbucket.org/mahlon/Ruby-Ezmlm'
-	s.authors      = [
-		'Mahlon E. Smith <mahlon@martini.nu>',
-		'Michael Granger <ged@faeriemud.org>',
-		'Jeremiah Jordan <jeremiah.m.jordan@gmail.com>'
-	]
+	s.authors      = [ 'Mahlon E. Smith', 'Michael Granger', 'Jeremiah Jordan' ]
 	s.platform     = Gem::Platform::RUBY
 	s.summary      = "Interact with Ezmlm-IDX mailing lists."
 	s.name         = PROJECT
@@ -84,7 +81,7 @@ begin
 		rdoc.rdoc_dir   = 'docs'
 		rdoc.main       = "README.rdoc"
 		# rdoc.options    = [ '-f', 'fivefish' ]
-		rdoc.rdoc_files = [ 'lib', *FileList['ext/*/*.c'], *FileList['*.rdoc'] ]
+		rdoc.rdoc_files = [ 'lib', *FileList['ext/**.c'], *FileList['*.rdoc'], *FileList['*.md'] ]
 	end
 
 	RDoc::Task.new do |rdoc|

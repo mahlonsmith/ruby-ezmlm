@@ -1,6 +1,9 @@
 #!/usr/bin/ruby
 # vim: set nosta noet ts=4 sw=4:
 
+require 'pathname'
+require 'ezmlm' unless defined?( Ezmlm )
+require 'mail'
 
 # An individual list message.
 #
@@ -12,20 +15,9 @@
 # This class passes all heavy lifting to the Mail::Message library.
 # Please see it for specifics on usage.
 #
-# == Version
-#
-#  $Id$
-#
 #---
-
-require 'pathname'
-require 'ezmlm' unless defined?( Ezmlm )
-require 'mail'
-
-
-### A Ruby interface to an individual list message.
-###
 class Ezmlm::List::Message
+	#  $Id$
 
 	### Instantiate a new messag from a +list+ and a +message_number+.
 	###

@@ -1,6 +1,9 @@
 #!/usr/bin/ruby
 # vim: set nosta noet ts=4 sw=4:
 
+require 'pathname'
+require 'ezmlm' unless defined?( Ezmlm )
+
 
 # A collection of messages for a specific archive thread.
 #
@@ -8,20 +11,9 @@
 #    thread.subject         #=> "Help - navigate on interface?"
 #    thread.first.date.to_s #=> "2017-05-07T14:55:05-07:00"
 #
-#
-# == Version
-#
-#  $Id$
-#
 #---
-
-require 'pathname'
-require 'ezmlm' unless defined?( Ezmlm )
-
-
-### A collection of messages for a specific archive thread.
-###
 class Ezmlm::List::Thread
+	#  $Id$
 	include Enumerable
 
 	### Instantiate a new thread of messages given
