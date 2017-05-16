@@ -113,16 +113,6 @@ describe Ezmlm::List do
 	end
 
 
-	it 'returns the current threading state' do
-		expect( list.threaded? ).to be_truthy
-	end
-
-	it 'can set the threading state' do
-		list.threaded = false
-		expect( list.threaded? ).to be_falsey
-	end
-
-
 	it 'returns the current public/private state' do
 		expect( list.public? ).to be_truthy
 		expect( list.private? ).to be_falsey
@@ -200,9 +190,9 @@ describe Ezmlm::List do
 
 	it 'can set archival status' do
 		expect( list.archived? ).to be_truthy
-		list.archive = false
+		list.archived = false
 		expect( list.archived? ).to be_falsey
-		list.archive = true
+		list.archived = true
 		expect( list.archived? ).to be_truthy
 	end
 
@@ -336,6 +326,10 @@ describe Ezmlm::List do
 		expect( list.thread('cadgeokhhaieijmndokb') ).to be_a( Ezmlm::List::Thread )
 	end
 
+	it 'returns nil when fetching an invalid thread' do
+		expect( list.thread('whatever') ).to be_nil
+	end
+
 
 	it 'fetches author objects upon request' do
 		expect( list.author('ojjhjlapnejjlbcplabi') ).to be_a( Ezmlm::List::Author )
@@ -346,13 +340,19 @@ describe Ezmlm::List do
 		expect( list.author('yvette@example.net').name ).to eq( author.name )
 	end
 
+	it 'returns nil when fetching an invalid author' do
+		expect( list.author('whatever') ).to be_nil
+	end
+
 
 	context 'fetching messages' do
-		it 'raises an error if archiving is disabled' do
+		it 'returns nil if archiving is disabled' do
 			expect( list ).to receive( :archived? ).and_return( false )
-			expect {
-				list.message( 1 )
-			}.to raise_error( RuntimeError, /archiving is not enabled/i )
+			expect( list.message(1) ).to be_nil
+		end
+
+		it 'returns nil when fetching an invalid message id' do
+			expect( list.message(2389234) ).to be_nil
 		end
 
 		it 'raises an error if the message archive is empty' do

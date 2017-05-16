@@ -148,12 +148,12 @@ address( VALUE klass, VALUE email ) {
 
 	Check_Type( email, T_STRING );
 
-	email = rb_str_plus( rb_str_new2("<"), email);
+	email = rb_str_plus( rb_str_new2("<"), email );
 	input = StringValueCStr( email );
 
 	makehash( input, strlen(input), hash );
 
-	return rb_str_new2( hash );
+	return rb_str_new( hash, 20 );
 }
 
 

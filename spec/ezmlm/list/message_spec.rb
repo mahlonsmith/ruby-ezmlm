@@ -44,6 +44,7 @@ describe Ezmlm::List::Message do
 		it 'raises error when unable to read message' do
 			allow( list ).to receive( :listdir ).and_return( Pathname('/nope') )
 			expect( list ).to receive( :message_count ).and_return( 1 )
+			expect( list ).to receive( :archived? ).and_return( true )
 			expect {
 				described_class.new( list, 1 )
 			}.to raise_error( RuntimeError, /unable to determine message path/i )

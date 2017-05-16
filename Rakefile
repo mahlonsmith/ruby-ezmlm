@@ -59,7 +59,7 @@ environment.)
 	s.required_ruby_version = '>= 2.1'
 
 	s.add_dependency 'mail', "~> 2.6"
-	s.add_dependency 'rake-compiler', "~> 1.0"
+	s.add_development_dependency 'rake-compiler', "~> 1.0"
 end
 
 Gem::PackageTask.new( spec ) do |pkg|

@@ -2,7 +2,6 @@
 
 require 'simplecov' if ENV['COVERAGE']
 require 'rspec'
-require 'loggability/spechelpers'
 require 'fileutils'
 
 require_relative '../lib/ezmlm'

@@ -1,6 +1,7 @@
 #!/usr/bin/ruby
 # vim: set nosta noet ts=4 sw=4:
-#
+
+
 # A collection of messages authored from a unique user.
 #
 # Note that Ezmlm uses the "real name" part of an address
@@ -27,12 +28,12 @@ class Ezmlm::List::Author
 	include Enumerable
 
 	### Instantiate a new list of messages given
-	### a +list+ and a +author_id+.
+	### a +list+ and an +author_id+.
 	###
 	def initialize( list, author_id )
 		raise ArgumentError, "Unknown list object." unless list.respond_to?( :listdir )
 		raise ArgumentError, "Malformed Author ID." unless author_id =~ /^\w{20}$/
-		raise "Thread indexing is not enabled." unless list.threaded?
+		raise "Archiving is not enabled." unless list.archived?
 
 		@list     = list
 		@id       = author_id
@@ -67,6 +68,7 @@ class Ezmlm::List::Author
 			yield Ezmlm::List::Message.new( self.list, id )
 		end
 	end
+	alias_method :each_message, :each
 
 
 	### Lazy load each thread ID as a Ezmlm::List::Thread, yielding it to the block.
@@ -92,13 +94,15 @@ class Ezmlm::List::Author
 		path = self.author_path
 		raise "Unknown author: %p" % [ self.id ] unless path.exist?
 
-		path.each_line.with_index do |line, i|
-			if i.zero?
-				@name = line.match( /^\w+ (.+)/ )[1]
-			else
-				match = line.match( /^(\d+):\d+:(\w+) / ) or next
-				self.messages << match[1].to_i
-				self.threads  << match[2]
+		path.open( 'r', encoding: Encoding::ISO8859_1 ) do |fh|
+			fh.each_line.with_index do |line, i|
+				if i.zero?
+					@name = line.match( /^\w+ (.+)/ )[1]
+				else
+					match = line.match( /^(\d+):\d+:(\w+) / ) or next
+					self.messages << match[1].to_i
+					self.threads  << match[2]
+				end
 			end
 		end
 	end

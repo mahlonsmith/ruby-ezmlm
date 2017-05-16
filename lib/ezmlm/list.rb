@@ -1,7 +1,11 @@
 #!/usr/bin/ruby
 # vim: set nosta noet ts=4 sw=4:
-#
+
+
 # A Ruby interface to a single Ezmlm-idx mailing list directory.
+#
+#    list = Ezmlm::List.new( '/path/to/listdir' )
+#
 #
 # == Version
 #
@@ -28,6 +32,9 @@ class Ezmlm::List
 	###
 	def initialize( listdir )
 		listdir = Pathname.new( listdir ) unless listdir.is_a?( Pathname )
+		unless listdir.directory? && ( listdir + 'mailinglist' ).exist?
+			raise ArgumentError, "%p doesn't appear to be an ezmlm-idx list." % [ listdir.to_s ]
+		end
 		@listdir = listdir
 	end
 
@@ -219,27 +226,6 @@ class Ezmlm::List
 	end
 
 
-	### Returns +true+ if message threading is enabled.
-	###
-	def threaded?
-		return ( self.listdir + 'threaded' ).exist?
-	end
-
-	### Disable or enable message threading.
-	###
-	### This automatically builds message indexes and thread
-	### information on an incoming message.
-	###
-	def threaded=( enable=true )
-		if enable
-			self.touch( 'threaded' )
-		else
-			self.unlink( 'threaded' )
-		end
-	end
-	alias_method :threaded, :threaded=
-
-
 	### Returns +true+ if the list is configured to respond
 	### to remote management requests.
 	###
@@ -380,21 +366,23 @@ class Ezmlm::List
 	### Returns +true+ if message archival is enabled.
 	###
 	def archived?
-		return ( self.listdir + 'archived' ).exist? || ( self.listdir + 'indexed' ).exist?
+		test = %w[ archived indexed threaded ].each_with_object( [] ) do |f, acc|
+			acc << self.listdir + f
+		end
+
+		return test.all?( &:exist? )
 	end
 
-	### Disable or enable message archiving (and indexing.)
+	### Disable or enable message archiving (and indexing/threading.)
 	###
-	def archive=( enable=true )
+	def archived=( enable=true )
 		if enable
-			self.touch( 'archived' )
-			self.touch( 'indexed' )
+			self.touch( 'archived', 'indexed', 'threaded' )
 		else
-			self.unlink( 'archived' )
-			self.unlink( 'indexed' )
+			self.unlink( 'archived', 'indexed', 'threaded' )
 		end
 	end
-	alias_method :archive, :archive=
+	alias_method :archived, :archived=
 
 	### Returns +true+ if the message archive is accessible only to
 	### moderators.
@@ -653,9 +641,8 @@ class Ezmlm::List
 	### Returns an individual message if archiving was enabled.
 	###
 	def message( message_id )
-		raise "Archiving is not enabled." unless self.archived?
 		raise "Message archive is empty." if self.message_count.zero?
-		return Ezmlm::List::Message.new( self, message_id )
+		return Ezmlm::List::Message.new( self, message_id ) rescue nil
 	end
 
 	### Lazy load each message ID as a Ezmlm::List::Message,
@@ -671,8 +658,7 @@ class Ezmlm::List
 	### Return a Thread object for the given +thread_id+.
 	###
 	def thread( thread_id )
-		raise "Archiving is not enabled." unless self.archived?
-		return Ezmlm::List::Thread.new( self, thread_id )
+		return Ezmlm::List::Thread.new( self, thread_id ) rescue nil
 	end
 
 
@@ -680,9 +666,8 @@ class Ezmlm::List
 	### could also be an email address.
 	###
 	def author( author_id )
-		raise "Archiving is not enabled." unless self.archived?
 		author_id = Ezmlm::Hash.address(author_id) if author_id.index( '@' )
-		return Ezmlm::List::Author.new( self, author_id )
+		return Ezmlm::List::Author.new( self, author_id ) rescue nil
 	end
 
 
@@ -700,22 +685,25 @@ class Ezmlm::List
 			index = archivedir + dir.to_s + 'index'
 			next unless index.exist?
 
-			index.each_line.lazy.slice_before( /^\d+:/ ).each do |message|
-				match = message[0].match( /^(?<message_id>\d+): (?<thread_id>\w+)/ )
-				next unless match
-				thread_id  = match[ :thread_id ]
+			index.open( 'r', encoding: Encoding::ISO8859_1 ) do |fh|
+				fh.each_line.lazy.slice_before( /^\d+:/ ).each do |message|
 
-				match = message[1].match( /^(?<date>[^;]+);(?<author_id>\w+) / )
-				next unless match
-				author_id  = match[ :author_id ]
-				date       = match[ :date ]
+					match = message[0].match( /^(?<message_id>\d+): (?<thread_id>\w+)/ )
+					next unless match
+					thread_id  = match[ :thread_id ]
 
-				metadata = {
-					date:   Time.parse( date ),
-					thread: thread_id,
-					author: author_id
-				}
-				acc << metadata
+					match = message[1].match( /^(?<date>[^;]+);(?<author_id>\w+) / )
+					next unless match
+					author_id  = match[ :author_id ]
+					date       = match[ :date ]
+
+					metadata = {
+						date:   Time.parse( date ),
+						thread: thread_id,
+						author: author_id
+					}
+					acc << metadata
+				end
 			end
 		end
 
@@ -757,18 +745,25 @@ class Ezmlm::List
 
 	### Simply create an empty file, safely.
 	###
-	def touch( file )
-		self.write( file ) {}
+	def touch( *file )
+		self.with_safety do
+			Array( file ).flatten.each do |f|
+				f = self.listdir + f unless f.is_a?( Pathname )
+				f.open( 'w' ) {}
+			end
+		end
 	end
 
 
 	### Delete +file+ safely.
 	###
-	def unlink( file )
-		file = self.listdir + file unless file.is_a?( Pathname )
-		return unless file.exist?
+	def unlink( *file )
 		self.with_safety do
-			file.unlink
+			Array( file ).flatten.each do |f|
+				f = self.listdir + f unless f.is_a?( Pathname )
+				next unless f.exist?
+				f.unlink
+			end
 		end
 	end
 

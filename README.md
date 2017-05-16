@@ -37,10 +37,6 @@ be a generic interface for parsing and browsing list content.
 
     $ gem install ezmlm
 
-## Usage
-
-	....
-
 
 ## TODO
 

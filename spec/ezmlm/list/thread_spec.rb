@@ -29,10 +29,10 @@ describe Ezmlm::List::Thread do
 		end
 
 		it 'raises error if thread indexing is disabled' do
-			expect( list ).to receive( :threaded? ).and_return( false )
+			expect( list ).to receive( :archived? ).and_return( false )
 			expect {
 				described_class.new( list, thread_id )
-			}.to raise_error( RuntimeError, /indexing is not enabled/i )
+			}.to raise_error( RuntimeError, /archiving is not enabled/i )
 		end
 
 		it 'raises error if passed a malformed thread ID' do
@@ -43,7 +43,7 @@ describe Ezmlm::List::Thread do
 
 		it 'raises error when unable to read thread file' do
 			allow( list ).to receive( :listdir ).and_return( Pathname('/nope') )
-			expect( list ).to receive( :threaded? ).and_return( true )
+			expect( list ).to receive( :archived? ).and_return( true )
 			expect {
 				described_class.new( list, thread_id )
 			}.to raise_error( RuntimeError, /unknown thread/i )

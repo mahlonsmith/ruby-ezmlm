@@ -1,6 +1,7 @@
 #!/usr/bin/ruby
 # vim: set nosta noet ts=4 sw=4:
-#
+
+
 # A collection of messages for a specific archive thread.
 #
 #    thread = Ezmlm::List::Thread.new( list, 'acgcbmbmeapgpfckcdol' )
@@ -29,7 +30,7 @@ class Ezmlm::List::Thread
 	def initialize( list, thread_id )
 		raise ArgumentError, "Unknown list object." unless list.respond_to?( :listdir )
 		raise ArgumentError, "Malformed Thread ID." unless thread_id =~ /^\w{20}$/
-		raise "Thread indexing is not enabled." unless list.threaded?
+		raise "Archiving is not enabled." unless list.archived?
 
 		@list     = list
 		@id       = thread_id
@@ -65,6 +66,18 @@ class Ezmlm::List::Thread
 			yield Ezmlm::List::Message.new( self.list, id )
 		end
 	end
+	alias_method :each_message, :each
+
+
+	### Lazy load each author ID as a Ezmlm::List::Author, yielding it
+	### to the block.
+	###
+	def each_author
+		self.load_thread # refresh for any thread updates since object was created
+		self.authors.each do |id|
+			yield Ezmlm::List::Author.new( self.list, id )
+		end
+	end
 
 
 	#########
@@ -79,13 +92,15 @@ class Ezmlm::List::Thread
 		path = self.thread_path
 		raise "Unknown thread: %p" % [ self.id ] unless path.exist?
 
-		path.each_line.with_index do |line, i|
-			if i.zero?
-				@subject = line.match( /^\w+ (.+)/ )[1]
-			else
-				match = line.match( /^(\d+):\d+:(\w+) / ) or next
-				self.messages << match[1].to_i
-				self.authors  << match[2]
+		path.open( 'r', encoding: Encoding::ISO8859_1 ) do |fh|
+			fh.each_line.with_index do |line, i|
+				if i.zero?
+					@subject = line.match( /^\w+ (.+)/ )[1]
+				else
+					match = line.match( /^(\d+):\d+:(\w+) / ) or next
+					self.messages << match[1].to_i
+					self.authors  << match[2]
+				end
 			end
 		end
 	end

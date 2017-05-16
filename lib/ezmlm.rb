@@ -1,7 +1,14 @@
-#!/usr/bin/ruby
 # vim: set nosta noet ts=4 sw=4:
-#
+
+
 # A Ruby interface to the ezmlm-idx mailing list system.
+#
+#   Ezmlm.find_directories( '/lists' ) #=> [ Ezmlm::List, Ezmlm::List ]
+#
+#   Ezmlm.each_list( '/lists' ) do |list|
+#       puts "\"%s\" <%s>" % [ list.name, list.address ]
+#   end
+#
 #
 # == Version
 #

@@ -1,6 +1,7 @@
 #!/usr/bin/ruby
 # vim: set nosta noet ts=4 sw=4:
-#
+
+
 # An individual list message.
 #
 #    message = Ezmlm::List::Message.new( list, 24 )
@@ -31,6 +32,7 @@ class Ezmlm::List::Message
 	def initialize( list, message_number=0 )
 		raise ArgumentError, "Unknown list object." unless list.respond_to?( :listdir )
 		raise ArgumentError, "Invalid message number (impossible)" if message_number < 1
+		raise "Archiving is not enabled." unless list.archived?
 		raise ArgumentError, "Invalid message number (out of list bounds)" if message_number > list.message_count
 
 		@list = list

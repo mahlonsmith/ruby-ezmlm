@@ -28,11 +28,11 @@ describe Ezmlm::List::Author do
 			}.to raise_error( ArgumentError, /unknown list/i )
 		end
 
-		it 'raises error if thread indexing is disabled' do
-			expect( list ).to receive( :threaded? ).and_return( false )
+		it 'raises error if thread archiving is disabled' do
+			expect( list ).to receive( :archived? ).and_return( false )
 			expect {
 				described_class.new( list, author_id )
-			}.to raise_error( RuntimeError, /indexing is not enabled/i )
+			}.to raise_error( RuntimeError, /archiving is not enabled/i )
 		end
 
 		it 'raises error if passed a malformed author ID' do
@@ -43,7 +43,7 @@ describe Ezmlm::List::Author do
 
 		it 'raises error when unable to read index file' do
 			allow( list ).to receive( :listdir ).and_return( Pathname('/nope') )
-			expect( list ).to receive( :threaded? ).and_return( true )
+			expect( list ).to receive( :archived? ).and_return( true )
 			expect {
 				described_class.new( list, author_id )
 			}.to raise_error( RuntimeError, /unknown author/i )
