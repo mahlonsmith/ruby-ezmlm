@@ -27,19 +27,19 @@ static const unsigned int littleendian[8] = {
 #define data ((unsigned char *) s->in)
 #define outdata ((unsigned char *) s->out)
 
-extern void surf( unsigned int out[8], const unsigned int in[12], const unsigned int seed[32] );
-extern void surfpcs_init( surfpcs *s, const unsigned int k[32] );
-extern void surfpcs_add( surfpcs *s, const char *x,unsigned int n );
-extern void surfpcs_addlc( surfpcs *s, const char *x,unsigned int n );
-extern void surfpcs_out( surfpcs *s, unsigned char h[32] );
+static void surf( unsigned int out[8], const unsigned int in[12], const unsigned int seed[32] );
+static void surfpcs_init( surfpcs *s, const unsigned int k[32] );
+static void surfpcs_add( surfpcs *s, const char *x,unsigned int n );
+static void surfpcs_addlc( surfpcs *s, const char *x,unsigned int n );
+static void surfpcs_out( surfpcs *s, unsigned char h[32] );
 #endif
 
 
 #ifndef SUBHASH_H
 #define SUBHASH_H
 
-unsigned int subhashs(const char *s);
-unsigned int subhashb(const char *s,long len);
+static unsigned int subhashs(const char *s);
+static unsigned int subhashb(const char *s,long len);
 #define subhashsa(SA) subhashb((SA)->s,(SA)->len)
 
 #endif

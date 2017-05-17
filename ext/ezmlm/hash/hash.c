@@ -13,6 +13,7 @@
  *
 */
 
+static
 void surf(unsigned int out[8],const unsigned int in[12],const unsigned int seed[32])
 {
   unsigned int t[12]; unsigned int x; unsigned int sum = 0;
@@ -32,6 +33,7 @@ void surf(unsigned int out[8],const unsigned int in[12],const unsigned int seed[
   }
 }
 
+static
 void surfpcs_init(surfpcs *s,const unsigned int k[32])
 {
   int i;
@@ -41,6 +43,7 @@ void surfpcs_init(surfpcs *s,const unsigned int k[32])
   s->todo = 0;
 }
 
+static
 void surfpcs_add(surfpcs *s,const char *x,unsigned int n)
 {
   int i;
@@ -59,6 +62,7 @@ void surfpcs_add(surfpcs *s,const char *x,unsigned int n)
   }
 }
 
+static
 void surfpcs_addlc(surfpcs *s,const char *x,unsigned int n)
 /* modified from surfpcs_add by case-independence and skipping ' ' & '\t' */
 {
@@ -84,6 +88,7 @@ void surfpcs_addlc(surfpcs *s,const char *x,unsigned int n)
   }
 }
 
+static
 void surfpcs_out(surfpcs *s,unsigned char h[32])
 {
   int i;
@@ -95,6 +100,7 @@ void surfpcs_out(surfpcs *s,unsigned char h[32])
   for (i = 0;i < 32;++i) h[i] = outdata[end[i]];
 }
 
+static
 void makehash(const char *indata,unsigned int inlen,char *hash)
 	/* makes hash[COOKIE=20] from stralloc *indata, ignoring case and */
 	/* SPACE/TAB */
@@ -112,6 +118,7 @@ void makehash(const char *indata,unsigned int inlen,char *hash)
     hash[i] = 'a' + (h[i] & 15);
 }
 
+static
 unsigned int subhashb(const char *s,long len)
 {
   unsigned long h;
@@ -121,6 +128,7 @@ unsigned int subhashb(const char *s,long len)
   return h % 53;
 }
 
+static
 unsigned int subhashs(const char *s)
 {
   return subhashb(s,strlen(s));
@@ -132,7 +140,7 @@ unsigned int subhashs(const char *s)
 
 
 /*
- * call­seq:
+ * call-seq:
  *   Ezmlm::Hash.address( email ) -> String
  *
  * Call the Surf hashing function on an +email+ address, returning
@@ -141,7 +149,7 @@ unsigned int subhashs(const char *s)
  * the '<' character.)
  *
  */
-VALUE
+static VALUE
 address( VALUE klass, VALUE email ) {
 	char hash[20];
 	char *input;
@@ -158,14 +166,14 @@ address( VALUE klass, VALUE email ) {
 
 
 /*
- * call­seq:
+ * call-seq:
  *   Ezmlm::Hash.subscriber( address ) -> String
  *
  * Call the subscriber hashing function on an email +address+, returning
  * the index character referring to the file containing subscriber presence.
  *
  */
-VALUE
+static VALUE
 subscriber( VALUE klass, VALUE email ) {
 	unsigned int prefix;
 
