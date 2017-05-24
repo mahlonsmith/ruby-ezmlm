@@ -664,6 +664,16 @@ class Ezmlm::List
 	end
 
 
+	### Return a Time object for the last activity on the list, or nil
+	### if archiving is disabled or there are no posts.
+	###
+	def last_activity
+		file = self.listdir + 'archnum'
+		return unless file.exist?
+		return file.stat.mtime
+	end
+
+
 	### Parse all thread indexes into a single array that can be used
 	### as a lookup table.
 	###

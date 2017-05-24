@@ -14,7 +14,7 @@ module Ezmlm
 	# $Id$
 
 	# Package version
-	VERSION = '1.0.2'
+	VERSION = '1.1.0'
 
 	# Suck in the components.
 	#

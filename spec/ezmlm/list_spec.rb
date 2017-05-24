@@ -236,6 +236,10 @@ describe Ezmlm::List do
 		expect( list.digest_count ).to eq( 10 )
 	end
 
+	it 'knows the date of the most recent posting' do
+		expect( list.last_activity ).to be_a( Time )
+	end
+
 	it 'can set a new digest message count' do
 		list.digest_count = 25
 		expect( list.digest_count ).to eq( 25 )
