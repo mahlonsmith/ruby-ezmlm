@@ -25,7 +25,7 @@ class Ezmlm::List
 	###
 	def initialize( listdir )
 		listdir = Pathname.new( listdir ) unless listdir.is_a?( Pathname )
-		unless listdir.directory? && ( listdir + 'mailinglist' ).exist?
+		unless listdir.directory? && ( listdir + 'ezmlmrc' ).exist?
 			raise ArgumentError, "%p doesn't appear to be an ezmlm-idx list." % [ listdir.to_s ]
 		end
 		@listdir = listdir

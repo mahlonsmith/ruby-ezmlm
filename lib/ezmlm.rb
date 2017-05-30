@@ -14,7 +14,7 @@ module Ezmlm
 	# $Id$
 
 	# Package version
-	VERSION = '1.1.0'
+	VERSION = '1.1.1'
 
 	# Suck in the components.
 	#
@@ -35,7 +35,7 @@ module Ezmlm
 	def find_directories( listsdir )
 		listsdir = Pathname.new( listsdir )
 		return Pathname.glob( listsdir + '*' ).sort.select do |entry|
-			entry.directory? && ( entry + 'mailinglist' ).exist?
+			entry.directory? && ( entry + 'ezmlmrc' ).exist?
 		end
 	end
 
