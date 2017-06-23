@@ -70,7 +70,7 @@ class Ezmlm::List
 	### Returns +true+ if +address+ is a subscriber to this list.
 	###
 	def include?( addr, section: nil )
-		addr.downcase!
+		addr = addr.downcase
 		file = self.subscription_dir( section ) + Ezmlm::Hash.subscriber( addr )
 		return false unless file.exist?
 		return file.read.scan( /T([^\0]+)\0/ ).flatten.include?( addr )
@@ -91,7 +91,7 @@ class Ezmlm::List
 	def subscribe( *addr, section: nil )
 		addr.each do |address|
 			next unless address.index( '@' )
-			address.downcase!
+			address = address.downcase
 
 			file = self.subscription_dir( section ) + Ezmlm::Hash.subscriber( address )
 			self.with_safety do
@@ -117,7 +117,7 @@ class Ezmlm::List
 	###
 	def unsubscribe( *addr, section: nil )
 		addr.each do |address|
-			address.downcase!
+			address = address.downcase
 
 			file = self.subscription_dir( section ) + Ezmlm::Hash.subscriber( address )
 			self.with_safety do
