@@ -1,7 +1,13 @@
+
 # Ruby-Ezmlm
 
-code
-: https://bitbucket.org/mahlon/Ruby-Ezmlm
+ * home:
+   * http://code.martini.nu/ruby-ezmlm
+ * mirrors:
+   * https://github.com/mahlonsmith/ruby-ezmlm
+   * https://hg.sr.ht/~mahlon/ruby-ezmlm
+ * Ezmlm:
+   * http://untroubled.org/ezmlm/
 
 
 ## Authors
@@ -17,8 +23,6 @@ This is a ruby interface for interacting with ezmlm-idx, an email list
 manager for use with the Qmail MTA, and the messages contained therein.
 (The -idx provides an extended feature set over the original ezmlm
 environment.)
-
-http://untroubled.org/ezmlm/
 
 This was tested against ezmlm-idx 7.2.2.
 
@@ -46,7 +50,7 @@ be a generic interface for parsing and browsing list content.
 
 ## Limitations
 
-This library doesn't create new lists from scratch.  Use ezmlm-make.
+This library doesn't create new lists from scratch.  Use `ezmlm-make`.
 
 This library is designed to only work with lists stored on disk (the
 default), not the SQL backends.
