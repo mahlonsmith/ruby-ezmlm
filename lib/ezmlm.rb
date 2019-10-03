@@ -11,7 +11,7 @@ require 'pathname'
 #   end
 #
 module Ezmlm
-	# $Id: ezmlm.rb,v 81cc7d47f68f 2017/05/30 18:08:48 mahlon $
+	# $Id$
 
 	# Package version
 	VERSION = '1.1.2'
