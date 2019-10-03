@@ -1,7 +1,6 @@
 #!/usr/bin/ruby
 # vim: set nosta noet ts=4 sw=4:
 
-
 require 'pathname'
 require 'time'
 require 'etc'
@@ -14,7 +13,7 @@ require 'ezmlm' unless defined?( Ezmlm )
 #
 #---
 class Ezmlm::List
-	#  $Id$
+	#  $Id: list.rb,v a89d91d4b157 2017/06/23 17:54:26 mahlon $
 
 	# Valid subdirectories/sections for subscriptions.
 	SUBSCRIPTION_DIRS = %w[ deny mod digest allow ]
@@ -824,13 +823,11 @@ class Ezmlm::List
 	###
 	def with_safety( &block )
 		home = self.homedir
-		mode = home.stat.mode
-
-		home.chmod( mode | 01000 ) # enable sticky
+		home.chmod( home.stat.mode | 01000 ) # enable sticky
 		yield
 
 	ensure
-		home.chmod( mode )
+		home.chmod( home.stat.mode & ~01000 ) # disable sticky
 	end
 
 end # class Ezmlm::List
